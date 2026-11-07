@@ -101,7 +101,7 @@ export function CountBadge({ n, className = '' }) {
 }
 
 export function Banner({ user, className = '' }) {
-  return <div className={`h-24 w-full ${className}`} style={bannerStyle(user)} />;
+  return <div className={`h-32 w-full ${className}`} style={bannerStyle(user)} />;
 }
 
 export function Modal({ open, title, onClose, children, width = 'max-w-md' }) {

@@ -216,7 +216,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       {/* Barre d'en-tête de l'espace */}
       {server.banner && (
-        <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft md:h-44">
+        <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft">
           <img src={server.banner} alt="" draggable={false} className="h-full w-full object-cover object-center" />
         </div>
       )}

@@ -153,7 +153,7 @@ function MiniProfileModal({ userId, serverId, onClose }) {
   return (
     <Modal open title="" onClose={onClose} width="max-w-sm">
       <div className="-mx-6 -mt-6 overflow-hidden rounded-t-[2.5rem]">
-        <Banner user={user} className="h-28" />
+        <Banner user={user} />
       </div>
       <div className="-mt-12">
         <Avatar user={user} size="lg" showStatus className="ring-2 ring-surface" />
