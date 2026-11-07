@@ -10,6 +10,9 @@ db.exec(`CREATE TABLE IF NOT EXISTS auth_tokens (
   expires_at INTEGER NOT NULL
 )`);
 
+// Confirmation par e-mail désactivée pour l'instant : les comptes sont actifs dès l'inscription.
+// Mettre à true (et configurer l'envoi) pour la réactiver.
+export const CONFIRM_EMAIL = false;
 export const mailConfigured = () => !!(process.env.MAIL_API_KEY && process.env.MAIL_FROM);
 export const publicBase = () => (process.env.PUBLIC_URL || 'http://localhost:3001').replace(/\/$/, '');
 
