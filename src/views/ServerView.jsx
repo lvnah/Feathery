@@ -6,7 +6,7 @@ import {
 } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal } from '../components/ui';
 import PlusBadge from '../components/PlusBadge';
-import { isVoiceMuted, setVoiceMuted } from '../lib/voice';
+import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
 import { formatStamp, isOnline } from '../lib/util';
@@ -216,11 +216,11 @@ export default function ServerView({ serverId, channelId, goHome }) {
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       {/* Barre d'en-tête de l'espace */}
       {server.banner && (
-        <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft">
+        <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft max-lg:hidden">
           <img src={server.banner} alt="" draggable={false} className="h-full w-full object-cover object-center" />
         </div>
       )}
-      <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3">
+      <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">
         <div className="flex min-w-0 items-center gap-3" onContextMenu={(e) => {
           if (isOwner) { e.preventDefault(); return; }
           openMenu(e, [{ label: 'Quitter l’espace', danger: true, onClick: () => { if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); } }]);
@@ -230,7 +230,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
             <p className="truncate text-lg font-extrabold">{server.name}</p>
             <span className="pill !bg-brand-50 !text-brand-700">
               <span className="h-2 w-2 rounded-full bg-brand-500" />
-              Hub Communautaire Actif
+              <span className="max-lg:hidden">Hub Communautaire Actif</span>
             </span>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
       </header>
 
       {/* Salons : tuiles toujours visibles. Un vocal montre qui est dedans (photos) et sa capacité. */}
-      <nav className="panel thin-scroll flex items-stretch gap-3 overflow-x-auto p-3">
+      <nav className="panel thin-scroll flex items-stretch gap-3 overflow-x-auto p-3 max-lg:gap-2 max-lg:p-1.5">
         {textChannels.map((c) => {
           const active = current?.id === c.id;
           const n = unreadCount(s).channels[c.id] || 0;
@@ -264,7 +264,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
               key={c.id}
               onClick={() => go({ name: 'server', serverId, channelId: c.id })}
               onContextMenu={(e) => channelMenu(e, c)}
-              className={`flex min-w-[9rem] shrink-0 flex-col justify-between gap-3 rounded-3xl px-4 py-3 text-left transition ${
+              className={`flex min-w-[9rem] shrink-0 flex-col justify-between gap-3 rounded-3xl px-4 py-3 text-left transition max-lg:min-w-[6.5rem] max-lg:flex-row max-lg:items-center max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2 ${
                 active ? 'border-2 border-brand-500 bg-brand-600 text-white shadow-soft' : 'border-2 border-slate-300 bg-surface text-slate-900 shadow-soft'
               }`}
             >
@@ -275,7 +275,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                 <CountBadge n={active ? 0 : n} />
               </span>
               <span className="truncate text-sm font-bold">{c.name}</span>
-              <span className={`text-[11px] font-semibold ${active ? 'text-white/60' : 'text-slate-400'}`}>Texte</span>
+              <span className={`text-[11px] font-semibold max-lg:hidden ${active ? 'text-white/60' : 'text-slate-400'}`}>Texte</span>
             </button>
           );
         })}
@@ -285,9 +285,9 @@ export default function ServerView({ serverId, channelId, goHome }) {
           return (
             <button
               key={c.id}
-              onClick={() => run(toast, () => joinVoice(c.id), `Connecté à ${c.name}`)}
+              onClick={() => { unlockAudio(); run(toast, () => joinVoice(c.id), `Connecté à ${c.name}`); }}
               onContextMenu={(e) => channelMenu(e, c)}
-              className={`flex min-w-[12rem] shrink-0 flex-col justify-between gap-3 rounded-3xl px-4 py-3 text-left transition ${
+              className={`flex min-w-[12rem] shrink-0 flex-col justify-between gap-3 rounded-3xl px-4 py-3 text-left transition max-lg:min-w-[8rem] max-lg:gap-1 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2 ${
                 inside ? 'bg-brand-500 text-white shadow-[0_12px_30px_-12px_rgba(0,116,84,0.8)]' : 'border-2 border-slate-300 bg-surface text-slate-900 shadow-soft'
               }`}
             >
@@ -328,7 +328,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
 
       <div className="flex min-h-0 flex-1 gap-4">
         {/* Chat */}
-        <section className="panel flex h-[72dvh] min-w-0 shrink-0 flex-col overflow-hidden lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink">
+        <section className="panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
             <span className="pill !bg-brand-100 !px-3 !py-1 !text-sm !font-bold !text-brand-700">Salon #{current?.name ?? '—'}</span>
             {/* Membres : sur téléphone et tablette, la liste s'ouvre dans une fenêtre */}
