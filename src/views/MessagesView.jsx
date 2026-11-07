@@ -63,7 +63,7 @@ export default function MessagesView({ withId }) {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-      <PageBanner compact icon="message" title="Messages privés" subtitle={`${conversations.length} conversation(s)`} />
+      <PageBanner icon="message" title="Messages privés" subtitle={`${conversations.length} conversation(s)`} />
     <div className="flex min-h-0 min-w-0 flex-1 gap-4">
       <aside className={`panel thin-scroll w-full flex-col overflow-y-auto p-5 md:flex md:w-80 md:shrink-0 ${withId ? 'hidden' : 'flex'}`}>
         <h2 className="px-2 pb-4 text-xl font-extrabold">Messages privés</h2>
