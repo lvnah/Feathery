@@ -52,7 +52,7 @@ export default function Layout({ view, children }) {
     view.name === item.key;
 
   return (
-    <div className="flex h-dvh gap-4 p-4">
+    <div className="flex h-dvh gap-4 p-3 sm:p-4">
       <aside
         className={`panel sidebar-drawer fixed inset-y-4 left-4 z-40 flex w-72 flex-col gap-6 overflow-hidden p-5 lg:static lg:z-auto lg:flex lg:w-64 lg:shrink-0 ${
           drawer ? 'translate-x-0' : '-translate-x-[120%] lg:translate-x-0'
@@ -138,7 +138,7 @@ export default function Layout({ view, children }) {
 
       {drawer && <div className="mobile-overlay fixed inset-0 z-30 bg-ink/20 lg:hidden" onClick={() => setDrawer(false)} />}
 
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 pb-20 lg:pb-0">
         <div className="flex items-center gap-3 lg:hidden">
           <button onClick={() => setDrawer(true)} aria-label="Ouvrir le menu" className="panel rounded-2xl px-4 py-3">
             <Icon name="home" className="h-5 w-5" />
@@ -147,6 +147,41 @@ export default function Layout({ view, children }) {
         </div>
         <main className="flex min-h-0 flex-1 gap-4 overflow-hidden">{children}</main>
       </div>
+
+      {/* Navigation du bas (téléphone et tablette) : accès direct aux pages principales */}
+      <nav aria-label="Navigation principale" className="panel mobile-nav fixed inset-x-3 bottom-3 z-30 flex items-stretch gap-1 p-1.5 lg:hidden">
+        {[
+          ...nav.filter((i) => ['home', 'messages', 'friends'].includes(i.key)),
+          { key: 'community', label: 'Communauté', icon: 'search', view: { name: 'community' } },
+        ].map((item) => {
+          const badge = item.key === 'messages' ? messagesBadge(s) : item.key === 'friends' ? unreadCount(s).friendRequests : 0;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => navigate(item.view)}
+              aria-label={item.label}
+              aria-current={isActive(item) ? 'page' : undefined}
+              className={`relative flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-bold transition ${
+                isActive(item) ? 'bg-brand-100 text-brand-700' : 'text-slate-500'
+              }`}
+            >
+              <Icon name={item.icon} className="h-5 w-5" />
+              <span className="truncate">{item.label}</span>
+              {badge > 0 && <span className="absolute right-3 top-1.5 h-2.5 w-2.5 rounded-full bg-brand-500 ring-2 ring-surface" />}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setDrawer(true)}
+          aria-label="Mes espaces"
+          className="flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-bold text-slate-500"
+        >
+          <Icon name="hash" className="h-5 w-5" />
+          <span className="truncate">Espaces</span>
+        </button>
+      </nav>
     </div>
   );
 }

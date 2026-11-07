@@ -4,6 +4,7 @@ import { useStore, useUI, Avatar, CountBadge, Icon, ServerIcon } from '../compon
 import { serverUnread, leaveServer } from '../lib/store';
 import { run } from './ServerView';
 import Logo from '../components/Logo';
+import SpaceCard from '../components/SpaceCard';
 import { fullName, isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
 
 // Bannière d'accueil : l'accroche apparaît mot par mot, « gamer » bascule vers « communauté »,
@@ -43,11 +44,11 @@ function HeroBanner({ onJoin }) {
 
       <div className="relative z-10 grid justify-items-center gap-8 text-center">
         {/* 1. Accroche mot à mot, puis bascule « gamer » → « communauté » */}
-        <p className="hero-tag col-start-1 row-start-1 flex max-w-md flex-wrap items-baseline justify-center gap-x-2 text-lg font-semibold text-white/90 md:text-2xl">
+        <p className="hero-tag col-start-1 row-start-1 max-w-md text-center text-lg font-semibold leading-relaxed text-white/90 md:text-2xl">
           {HERO_TAGLINE.map((word, i) => (
-            <span key={i} className="hero-word inline-block" style={{ animationDelay: `${0.3 + i * 0.6667}s`, animationDuration: '0.6667s' }}>{word}</span>
+            <span key={i} className="hero-word inline-block" style={{ animationDelay: `${0.3 + i * 0.6667}s`, animationDuration: '0.6667s' }}>{word}&nbsp;</span>
           ))}
-          <span className="inline-grid">
+          <span className="inline-grid align-baseline">
             <span className="hero-word-out col-start-1 row-start-1" style={{ animationDelay: '3.6333s', animationDuration: '0.6667s' }}>gamer</span>
             <span className="hero-word-in col-start-1 row-start-1 whitespace-nowrap" style={{ animationDelay: '4.3s', animationDuration: '0.6667s' }}>communauté</span>
           </span>
@@ -164,21 +165,19 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {servers.map((srv) => (
-                  <button key={srv.id} onClick={() => go({ name: 'server', serverId: srv.id })} onContextMenu={(e) => {
-                    if (srv.owner_id === me.id) { e.preventDefault(); return; }
-                    openMenu(e, [{ label: 'Quitter l’espace', danger: true, onClick: () => { if (window.confirm(`Quitter « ${srv.name} » ?`)) run(toast, () => leaveServer(srv.id)); } }]);
-                  }} className="flex items-center gap-4 rounded-3xl border-2 border-brand-100 bg-surface p-5 text-left shadow-panel transition hover:border-brand-300">
-                    <ServerIcon server={srv} className="h-14 w-14 shrink-0" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-lg font-extrabold text-slate-900">{srv.name}</span>
-                      <span className="mt-0.5 block text-sm font-semibold text-slate-500">
-                        {membersOf(s, srv.id).length} membre(s) · {srv.is_public ? 'Public' : 'Privé'}
-                      </span>
-                    </span>
-                    <CountBadge n={serverUnread(s, srv.id)} />
-                  </button>
+                  <SpaceCard
+                    key={srv.id}
+                    server={srv}
+                    meta={`${membersOf(s, srv.id).length} membre(s) · ${srv.is_public ? 'Public' : 'Privé'}`}
+                    unread={serverUnread(s, srv.id)}
+                    onClick={() => go({ name: 'server', serverId: srv.id })}
+                    onContextMenu={(e) => {
+                      if (srv.owner_id === me.id) { e.preventDefault(); return; }
+                      openMenu(e, [{ label: 'Quitter l’espace', danger: true, onClick: () => { if (window.confirm(`Quitter « ${srv.name} » ?`)) run(toast, () => leaveServer(srv.id)); } }]);
+                    }}
+                  />
                 ))}
               </div>
             )}

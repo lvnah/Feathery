@@ -93,7 +93,7 @@ export function buildSnapshot(me) {
     .get(Date.now() - ONLINE_WINDOW_MS);
 
   const communities = all(
-    `SELECT s.id, s.name, s.icon, s.created_at, u.pseudo AS owner_pseudo, u.tag AS owner_tag,
+    `SELECT s.id, s.name, s.icon, s.banner, s.created_at, u.pseudo AS owner_pseudo, u.tag AS owner_tag,
        (SELECT COUNT(*) FROM memberships m WHERE m.server_id = s.id) AS members
      FROM servers s JOIN users u ON u.id = s.owner_id WHERE s.is_public = 1 ORDER BY s.created_at DESC LIMIT 200`,
   );

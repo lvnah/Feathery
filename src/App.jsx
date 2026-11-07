@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Splash from './components/Splash';
 import { getMe, getState, leaveVoice, refresh, setVoiceMutedRemote } from './lib/store';
 import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/voice';
+import { playJoin, playLeave } from './lib/sounds';
 import { getToken } from './lib/api';
 import { ContextMenu, UIContext, useStore } from './components/ui';
 import Layout from './components/Layout';
@@ -24,13 +25,29 @@ function viewFromPath(pathname) {
 }
 
 // Connexions vocales : d'après l'état courant (salon du membre et participants).
+// Dernier état vocal vu : sert à jouer les sons d'arrivée et de départ.
+let lastVoice = { channelId: null, ids: [] };
+
 function reconcileVoice() {
   const st = getState();
   const me = st && getMe(st);
   if (!me) return stopVoice();
   const mine = st.voice.find((v) => v.user_id === me.id);
-  if (!mine) return syncVoice(null, me.id, []);
+  if (!mine) {
+    if (lastVoice.channelId) playLeave(); // je quitte le vocal
+    lastVoice = { channelId: null, ids: [] };
+    return syncVoice(null, me.id, []);
+  }
   const participants = st.voice.filter((v) => v.channel_id === mine.channel_id).map((v) => v.user_id);
+  if (mine.channel_id !== lastVoice.channelId) {
+    playJoin(); // je rejoins un vocal
+  } else {
+    const joined = participants.some((id) => id !== me.id && !lastVoice.ids.includes(id));
+    const left = lastVoice.ids.some((id) => id !== me.id && !participants.includes(id));
+    if (joined) playJoin(); // quelqu'un arrive : tout le monde l'entend
+    else if (left) playLeave(); // quelqu'un part : tout le monde l'entend
+  }
+  lastVoice = { channelId: mine.channel_id, ids: participants };
   // Le serveur doit connaître notre micro (il repart ouvert à chaque connexion au salon).
   if (!!mine.muted !== isVoiceMuted()) setVoiceMutedRemote(isVoiceMuted()).catch(() => {});
   return syncVoice(mine.channel_id, me.id, participants);

@@ -220,3 +220,19 @@ html[data-theme="dark"] .hover\:bg-slate-300:hover { background-color: #26372f !
 html[data-theme="dark"] .hover\:text-slate-900:hover { color: #e8f5ee !important; }
 html[data-theme="dark"] .hover\:bg-surface:hover { background-color: #17221e !important; }
 html[data-theme="dark"] .hover\:border-brand-200:hover { border-color: #2f6b52 !important; }
+
+/* ---- Mobile et tablette ---- */
+@media (max-width: 1023px) {
+  .panel { border-radius: 1.75rem; }
+}
+@media (max-width: 640px) {
+  /* 16 px minimum : évite le zoom automatique sur iPhone à la saisie */
+  input, select, textarea { font-size: 16px !important; }
+  .btn-primary, .btn-ghost, .btn-soft, .btn-danger { min-height: 44px; }
+}
+@media (pointer: coarse) {
+  button { touch-action: manipulation; }
+}
+.mobile-nav {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}

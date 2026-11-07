@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { getMe, joinPublicServer } from '../lib/store';
 import { useStore, useUI, Modal, ServerIcon, EmptyState } from '../components/ui';
+import PageBanner from '../components/PageBanner';
+import SpaceCard from '../components/SpaceCard';
 import { formatStamp } from '../lib/util';
 import { run } from './ServerView';
 import { fullName } from '../lib/util';
@@ -11,30 +13,30 @@ export default function CommunityView() {
   const { go, toast } = useUI();
   const me = getMe(s);
   const [selected, setSelected] = useState(null);
+  const [q, setQ] = useState('');
   const list = s.communities ?? [];
+  const shown = list.filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
     <div className="thin-scroll flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-extrabold">Communauté</h1>
-          <p className="text-sm text-slate-500">Les espaces publics. Cliquez sur un espace pour voir ses informations et le rejoindre.</p>
-        </div>
+        <PageBanner icon="search" title="Communauté" subtitle={`${list.length} espace(s) public(s) à découvrir`} />
+        <input className="field" placeholder="Rechercher un espace public…" value={q} onChange={(e) => setQ(e.target.value)} />
 
         {list.length === 0 && (
           <EmptyState icon="users" title="Aucun espace public">Les espaces créés en mode public apparaîtront ici.</EmptyState>
         )}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {list.map((c) => (
-            <button key={c.id} onClick={() => setSelected(c.id)} className="panel flex items-center gap-4 p-5 text-left transition">
-              <ServerIcon server={c} className="h-14 w-14" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-bold">{c.name}</span>
-                <span className="block text-xs text-slate-500">{c.members} membre(s) · créé par {c.owner_pseudo}</span>
-              </span>
-              {c.is_member && <span className="pill !bg-brand-100 !text-brand-700">Membre</span>}
-            </button>
+        {list.length > 0 && shown.length === 0 && <p className="text-sm text-slate-500">Aucun espace ne correspond à « {q} ».</p>}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {shown.map((c) => (
+            <SpaceCard
+              key={c.id}
+              server={c}
+              meta={`${c.members} membre(s) · par ${c.owner_pseudo}`}
+              badge={c.is_member ? <span className="pill !bg-brand-100 !text-brand-700">Membre</span> : null}
+              onClick={() => setSelected(c.id)}
+            />
           ))}
         </div>
       </div>

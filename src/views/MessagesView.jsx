@@ -4,6 +4,7 @@ import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon } from
 import { formatStamp, isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
 import PlusBadge from '../components/PlusBadge';
 import { run } from './ServerView';
+import PageBanner from '../components/PageBanner';
 
 // Messages privés. Une personne qui n'est pas amie peut écrire : cela crée une demande de message.
 export default function MessagesView({ withId }) {
@@ -59,6 +60,8 @@ export default function MessagesView({ withId }) {
   };
 
   return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+      <PageBanner compact icon="message" title="Messages privés" subtitle={`${conversations.length} conversation(s)`} />
     <div className="flex min-h-0 min-w-0 flex-1 gap-4">
       <aside className={`panel thin-scroll w-full flex-col overflow-y-auto p-5 md:flex md:w-80 md:shrink-0 ${withId ? 'hidden' : 'flex'}`}>
         <h2 className="px-2 pb-4 text-xl font-extrabold">Messages privés</h2>
@@ -179,6 +182,7 @@ export default function MessagesView({ withId }) {
           <EmptyState icon="message" title="Sélectionnez une conversation">Vos messages privés apparaîtront ici.</EmptyState>
         )}
       </section>
+    </div>
     </div>
   );
 }

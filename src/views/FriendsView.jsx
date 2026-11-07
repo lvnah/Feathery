@@ -3,6 +3,7 @@ import { friendsOf, getMe, getUser, pendingReceived, pendingSent, removeFriend, 
 import { useStore, useUI, Avatar, ErrorLine, Icon } from '../components/ui';
 import { fullName, isOnline, statusLabel, nameStyle } from '../lib/util';
 import { run } from './ServerView';
+import PageBanner from '../components/PageBanner';
 
 export default function FriendsView() {
   const s = useStore();
@@ -45,7 +46,7 @@ export default function FriendsView() {
   return (
     <div className="thin-scroll flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <h1 className="text-2xl font-extrabold">Gestion des amis</h1>
+        <PageBanner icon="users" title="Amis" subtitle="Ajoutez vos amis, répondez aux demandes et discutez avec eux." />
 
         <section className="panel p-6">
           <h2 className="font-bold">Ajouter un ami</h2>
