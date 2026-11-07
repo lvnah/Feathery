@@ -192,9 +192,9 @@ function PublicProfile({ user, goBack }) {
         <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-soft">
           <Banner user={user} className="h-44" />
           <div className="flex flex-col gap-4 px-6 pb-6">
-            <div className="-mt-10 flex items-end gap-4">
-              <Avatar user={user} size="xl" showStatus className="ring-2 ring-surface" />
-              <div className="min-w-0 pb-1">
+            <div className="flex flex-col items-start gap-3">
+              <Avatar user={user} size="xl" showStatus className="-mt-12 ring-4 ring-surface" />
+              <div className="min-w-0">
                 <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-extrabold">
                   <span className="truncate" style={nameStyle(user)}>{user.pseudo}</span> <span className="text-base font-semibold text-slate-400">#{user.tag}</span>
                   {user.is_plus ? <PlusBadge /> : null}
