@@ -11,7 +11,7 @@ export default function SpaceCard({ server, meta, unread = 0, badge = null, acti
     >
       <div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400">
         {server.banner && (
-          <img src={server.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />
+          <img src={server.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full scale-105 object-cover object-center blur-[2px]" />
         )}
         {unread > 0 && <span className="absolute right-3 top-3"><CountBadge n={unread} /></span>}
         {badge && <span className="absolute left-3 top-3">{badge}</span>}
