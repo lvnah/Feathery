@@ -1,5 +1,6 @@
-import { getMe, logout, updateSettings } from '../lib/store';
-import { useStore, useUI } from '../components/ui';
+import { changeEmail, changePassword, getMe, logout, updateSettings } from '../lib/store';
+import { useState } from 'react';
+import { ErrorLine, useStore, useUI } from '../components/ui';
 import PageBanner from '../components/PageBanner';
 import { run } from './ServerView';
 
@@ -52,6 +53,57 @@ function Toggle({ label, hint, checked, onChange }) {
   );
 }
 
+// Informations personnelles : adresse e-mail et mot de passe (l'ancien est toujours demandé).
+function PersonalInfo({ me, toast }) {
+  const st = me.settings || {};
+  const [newEmail, setNewEmail] = useState('');
+  const [emailPwd, setEmailPwd] = useState('');
+  const [oldPwd, setOldPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [error, setError] = useState('');
+  const doEmail = async (e) => {
+    e.preventDefault();
+    setError('');
+    const ok = await run(toast, () => changeEmail(emailPwd, newEmail.trim()), 'Adresse mise à jour. Vérifiez votre boîte mail si la confirmation est activée.');
+    if (ok) { setNewEmail(''); setEmailPwd(''); }
+  };
+  const doPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (newPwd !== confirmPwd) return setError('Les deux nouveaux mots de passe ne correspondent pas.');
+    const ok = await run(toast, () => changePassword(oldPwd, newPwd), 'Mot de passe modifié');
+    if (ok) { setOldPwd(''); setNewPwd(''); setConfirmPwd(''); }
+  };
+  return (
+    <Card title="Informations personnelles">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm text-slate-500">Adresse e-mail :</span>
+        <span className="font-bold text-slate-900">{st.email || 'aucune'}</span>
+        {st.email && (
+          <span className={`pill ${st.emailVerified ? '!bg-brand-100 !text-brand-700' : '!bg-amber-100 !text-amber-800'}`}>
+            {st.emailVerified ? 'Confirmée' : 'À confirmer'}
+          </span>
+        )}
+      </div>
+      <form onSubmit={doEmail} className="flex flex-col gap-3 border-t border-slate-100 pt-4">
+        <p className="text-sm font-bold text-slate-900">Changer d’adresse e-mail</p>
+        <input type="email" className="field" placeholder="Nouvelle adresse" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+        <input type="password" className="field" placeholder="Mot de passe actuel" value={emailPwd} onChange={(e) => setEmailPwd(e.target.value)} autoComplete="current-password" />
+        <button type="submit" className="btn-ghost self-start" disabled={!newEmail.includes('@') || !emailPwd}>Changer l’adresse</button>
+      </form>
+      <form onSubmit={doPassword} className="flex flex-col gap-3 border-t border-slate-100 pt-4">
+        <p className="text-sm font-bold text-slate-900">Changer de mot de passe</p>
+        <input type="password" className="field" placeholder="Ancien mot de passe" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} autoComplete="current-password" />
+        <input type="password" className="field" placeholder="Nouveau mot de passe (8 caractères minimum)" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} autoComplete="new-password" />
+        <input type="password" className="field" placeholder="Confirmer le nouveau mot de passe" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} autoComplete="new-password" />
+        <button type="submit" className="btn-ghost self-start" disabled={!oldPwd || newPwd.length < 8 || !confirmPwd}>Changer le mot de passe</button>
+      </form>
+      <ErrorLine>{error}</ErrorLine>
+    </Card>
+  );
+}
+
 export default function SettingsView() {
   const s = useStore();
   const { toast } = useUI();
@@ -93,6 +145,8 @@ export default function SettingsView() {
             ]}
           />
         </Card>
+
+        <PersonalInfo me={me} toast={toast} />
 
         <Card title="Compte">
           <button type="button" onClick={() => logout()} className="btn-ghost self-start">Se déconnecter</button>

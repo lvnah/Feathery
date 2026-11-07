@@ -5,6 +5,7 @@ import { db } from './db.js';
 import { hashPassword, verifyPassword, createSession, deleteSession } from './auth.js';
 import { publicUser } from './sync.js';
 import { storeImage } from './images.js';
+import { consumeToken, mailConfigured, sendVerification } from './mail.js';
 import { COUNTRY_CODES } from './countries.js';
 
 export class HttpError extends Error {
@@ -99,6 +100,8 @@ db.exec(`CREATE TABLE IF NOT EXISTS dm_hidden (user_id TEXT NOT NULL, peer_id TE
 const PLUS_PRESETS = ['aurora', 'ember', 'tide', 'nocturne', 'meadow'];
 
 const handlers = {
+  changePassword: (me, p) => changePassword(me, p),
+  changeEmail: (me, p) => changeEmail(me, p),
   // Statistiques de jeux (3 maximum) : rang et heures, affichées dans le profil.
   setGames(me, p) {
     const list = Array.isArray(p.games) ? p.games.slice(0, 3) : [];
@@ -117,7 +120,11 @@ const handlers = {
 
   // Supprimer un message privé que l'on a envoyé.
   deleteDM(me, p) {
-    run('DELETE FROM dms WHERE id = ? AND from_id = ?', String(p.messageId ?? ''), me.id);
+    const msg = one('SELECT * FROM dms WHERE id = ? AND from_id = ?', String(p.messageId ?? ''), me.id);
+    if (!msg) return;
+    // Une demande de message supprimée entraîne la suppression de toute la demande.
+    if (msg.status === 'request') run("DELETE FROM dms WHERE status = 'request' AND from_id = ? AND to_id = ?", me.id, msg.to_id);
+    else run('DELETE FROM dms WHERE id = ?', msg.id);
   },
 
   // Masquer une conversation pour soi (l'autre membre garde la sienne).
@@ -703,14 +710,25 @@ export function runAction(name, me, payload) {
 
 // Authentification (hors session).
 // Tag choisi à la création (4 chiffres) : libre si aucun compte n'a déjà ce pseudo#tag. Sinon, tag aléatoire libre.
-export function register({ pseudo, password, tag: wanted }) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const cleanEmail = (value) => {
+  const e = String(value ?? '').trim().toLowerCase();
+  if (!EMAIL_RE.test(e) || e.length > 120) fail('Adresse e-mail invalide.');
+  return e;
+};
+const emailTaken = (email, exceptId = '') => one('SELECT 1 FROM users WHERE email = ? COLLATE NOCASE AND id <> ?', email, exceptId);
+
+export async function register({ pseudo, password, tag: wanted, email: rawEmail }) {
   const name = text(pseudo, 2, 24, 'Le pseudo doit faire entre 2 et 24 caractères.');
+  const email = cleanEmail(rawEmail);
+  if (emailTaken(email)) fail('Cette adresse e-mail est déjà utilisée.', 409);
   if (typeof password !== 'string' || password.length < 8 || password.length > 200) {
     fail('Le mot de passe doit faire entre 8 et 200 caractères.');
   }
   const chosen = String(wanted ?? '').trim();
   if (chosen && !/^\d{4}$/.test(chosen)) fail('Le tag doit contenir exactement 4 chiffres.');
-  return transaction(() => {
+  const confirm = mailConfigured();
+  const id = transaction(() => {
     let tag = null;
     if (chosen) {
       if (one('SELECT 1 FROM users WHERE pseudo = ? COLLATE NOCASE AND tag = ?', name, chosen)) {
@@ -723,24 +741,63 @@ export function register({ pseudo, password, tag: wanted }) {
       if (!one('SELECT 1 FROM users WHERE pseudo = ? COLLATE NOCASE AND tag = ?', name, candidate)) tag = candidate;
     }
     if (!tag) fail('Pseudo saturé, choisissez-en un autre.', 409);
-    const id = newId('u');
+    const newId_ = newId('u');
     run(
-      'INSERT INTO users (id, pseudo, tag, password_hash, banner_type, banner_value, last_activity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      id, name, tag, hashPassword(password), 'gradient', '0', now(), now(),
+      'INSERT INTO users (id, pseudo, tag, password_hash, banner_type, banner_value, last_activity, created_at, email, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      newId_, name, tag, hashPassword(password), 'gradient', '0', 0, now(), email, confirm ? 0 : 1,
     );
-    return { token: createSession(id), user: publicUser(one('SELECT * FROM users WHERE id = ?', id)) };
+    return newId_;
   });
+  if (confirm) {
+    await sendVerification(id, email);
+    return { pending: true };
+  }
+  return { token: createSession(id), user: publicUser(one('SELECT * FROM users WHERE id = ?', id)) };
 }
 
 export function login({ fullName, password }) {
-  const [pseudo = '', tag = ''] = String(fullName ?? '').split('#').map((x) => x.trim());
-  // Le tag est obligatoire : Pseudo#1234. Sans lui, impossible de se connecter.
-  if (!tag) fail('Saisissez votre pseudo avec son tag, par exemple Pseudo#1234.', 400);
-  const user = one('SELECT * FROM users WHERE pseudo = ? COLLATE NOCASE AND tag = ?', pseudo, tag);
-  if (!user || typeof password !== 'string' || !verifyPassword(password, user.password_hash)) {
-    fail('Pseudo#tag ou mot de passe incorrect.', 401);
+  const raw = String(fullName ?? '').trim();
+  let user;
+  if (raw.includes('@')) {
+    // Connexion par e-mail.
+    user = one('SELECT * FROM users WHERE email = ? COLLATE NOCASE', raw.toLowerCase());
+  } else {
+    const [pseudo = '', tag = ''] = raw.split('#').map((x) => x.trim());
+    // Le tag est obligatoire : Pseudo#1234.
+    if (!tag) fail('Saisissez votre pseudo avec son tag (Pseudo#1234) ou votre adresse e-mail.', 400);
+    user = one('SELECT * FROM users WHERE pseudo = ? COLLATE NOCASE AND tag = ?', pseudo, tag);
   }
+  if (!user || typeof password !== 'string' || !verifyPassword(password, user.password_hash)) {
+    fail('Identifiant ou mot de passe incorrect.', 401);
+  }
+  if (user.email_verified === 0) fail('Confirmez votre adresse e-mail avant de vous connecter (lien reçu par mail).', 403);
   return { token: createSession(user.id), user: publicUser(user) };
+}
+
+// Confirmation d'adresse par le lien reçu par e-mail.
+export function verifyEmailToken(token) {
+  const row = consumeToken(token, 'verify');
+  if (!row) return false;
+  run('UPDATE users SET email_verified = 1 WHERE id = ?', row.user_id);
+  return true;
+}
+
+// Changer de mot de passe : l'ancien est exigé.
+export function changePassword(me, p) {
+  if (!verifyPassword(String(p.oldPassword ?? ''), me.password_hash)) fail('Ancien mot de passe incorrect.', 401);
+  const next = String(p.newPassword ?? '');
+  if (next.length < 8 || next.length > 200) fail('Le nouveau mot de passe doit faire entre 8 et 200 caractères.');
+  run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(next), me.id);
+}
+
+// Changer d'adresse e-mail : mot de passe exigé, puis nouvelle confirmation.
+export async function changeEmail(me, p) {
+  if (!verifyPassword(String(p.password ?? ''), me.password_hash)) fail('Mot de passe incorrect.', 401);
+  const email = cleanEmail(p.email);
+  if (emailTaken(email, me.id)) fail('Cette adresse e-mail est déjà utilisée.', 409);
+  const confirm = mailConfigured();
+  run('UPDATE users SET email = ?, email_verified = ? WHERE id = ?', email, confirm ? 0 : 1, me.id);
+  if (confirm) await sendVerification(me.id, email);
 }
 
 export function logout(token) {

@@ -5,7 +5,7 @@ import { extname, join, normalize, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { userFromToken } from './auth.js';
 import { buildSnapshot } from './sync.js';
-import { HttpError, login, logout, register, runAction } from './actions.js';
+import { HttpError, changeEmail, changePassword, login, logout, register, runAction, verifyEmailToken } from './actions.js';
 import { publicUser } from './sync.js';
 import { db } from './db.js';
 import { getVersion, bumpVersion, onVersion, offVersion } from './version.js';
@@ -83,9 +83,18 @@ function requireUser(req) {
 
 async function handleApi(req, res, path) {
   if (req.method === 'POST' && path === '/api/auth/register') {
-    const result = register(await readJson(req));
+    const result = await register(await readJson(req));
     bumpVersion(); // nouveau compte : les totaux changent
     return send(res, 201, result);
+  }
+  // Lien de confirmation reçu par e-mail.
+  if (req.method === 'GET' && path === '/api/auth/verify') {
+    const token = new URL(req.url, 'http://x').searchParams.get('token') ?? '';
+    const ok = verifyEmailToken(token);
+    bumpVersion();
+    const msg = ok ? 'Votre adresse est confirmée. Vous pouvez maintenant vous connecter à Feathery.' : 'Lien invalide ou expiré. Reconnectez-vous pour recevoir un nouveau lien.';
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Feathery</title></head><body style="font-family:system-ui,sans-serif;background:#f4fbf7;color:#0b1410;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0"><main style="max-width:420px;padding:32px;background:#fff;border-radius:24px;text-align:center"><h1 style="font-size:22px">Feathery</h1><p>${msg}</p><p><a href="/" style="color:#007454;font-weight:700">Retour à l’application</a></p></main></body></html>`);
   }
   if (req.method === 'POST' && path === '/api/auth/login') {
     const result = login(await readJson(req));
@@ -176,7 +185,7 @@ async function handleApi(req, res, path) {
   const match = path.match(/^\/api\/actions\/([A-Za-z]+)$/);
   if (req.method === 'POST' && match) {
     const me = requireUser(req);
-    const result = runAction(match[1], me, await readJson(req));
+    const result = await runAction(match[1], me, await readJson(req));
     bumpVersion();
     return send(res, 200, { ok: true, result: result ?? null });
   }

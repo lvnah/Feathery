@@ -21,7 +21,8 @@ export default function MessagesView({ withId }) {
     ...s.dms.flatMap((d) => [d.from, d.to]).filter((id) => id !== me.id),
   ]);
   const lastDmWith = (id) => s.dms.filter((d) => (d.from === me.id && d.to === id) || (d.from === id && d.to === me.id)).at(-1);
-  const conversations = [...partnerIds]
+  const hidden = new Set(s.hiddenDmPeers || []);
+  const conversations = [...partnerIds].filter((id) => !(hidden.has(id) && !s.dms.some((d) => d.from === id || d.to === id)))
     .map((id) => getUser(s, id))
     .filter(Boolean)
     .map((u) => ({ user: u, last: lastDmWith(u.id) }))

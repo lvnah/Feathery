@@ -77,10 +77,14 @@ export const searchUsers = (q) => api(`/api/users/search?q=${encodeURIComponent(
 
 // ---------- Authentification ----------
 
-export async function register(pseudo, password, tag = '') {
-  const res = await api('/api/auth/register', { method: 'POST', body: { pseudo, password, tag }, auth: false });
-  setToken(res.token);
-  await refresh();
+// Inscription : sans confirmation par mail, on est connecté tout de suite ; sinon le compte attend la confirmation.
+export async function register(pseudo, password, tag = '', email = '') {
+  const res = await api('/api/auth/register', { method: 'POST', body: { pseudo, password, tag, email }, auth: false });
+  if (res.token) {
+    setToken(res.token);
+    await refresh();
+  }
+  return res;
 }
 
 export async function login(fullName, password) {
@@ -186,11 +190,19 @@ export const setStatus = (status) => {
   return act('setStatus', { status });
 };
 export const deleteDM = (messageId) => {
-  patchLocal((s) => ({ ...s, dms: s.dms.filter((d) => d.id !== messageId) }));
+  const msg = state?.dms.find((d) => d.id === messageId);
+  patchLocal((s) => ({
+    ...s,
+    dms: s.dms.filter((d) => d.id !== messageId && !(msg && msg.status === 'request' && d.status === 'request' && d.from === msg.from && d.to === msg.to)),
+  }));
   return act('deleteDM', { messageId });
 };
 export const hideConversation = (peerId) => {
-  patchLocal((s) => ({ ...s, dms: s.dms.filter((d) => d.from !== peerId && d.to !== peerId) }));
+  patchLocal((s) => ({
+    ...s,
+    dms: s.dms.filter((d) => d.from !== peerId && d.to !== peerId),
+    hiddenDmPeers: [...new Set([...(s.hiddenDmPeers || []), peerId])],
+  }));
   return act('hideConversation', { peerId });
 };
 export const setVoiceMutedRemote = (muted) => {
@@ -239,6 +251,8 @@ export const updateChannel = (channelId, name) => act('updateChannel', { channel
 export const setChannelReadonly = (channelId, readonly) => act('setChannelReadonly', { channelId, readonly });
 export const setServerBanner = (serverId, value) => act('setServerBanner', { serverId, value });
 export const updateSettings = (patch) => act('updateSettings', patch);
+export const changePassword = (oldPassword, newPassword) => act('changePassword', { oldPassword, newPassword });
+export const changeEmail = (password, email) => act('changeEmail', { password, email });
 export const deleteRole = (serverId, roleId) => act('deleteRole', { serverId, roleId });
 export const deleteMessage = (messageId) => act('deleteMessage', { messageId });
 export const updateServerName = (serverId, name) => act('updateServerName', { serverId, name });

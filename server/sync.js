@@ -33,7 +33,7 @@ export function publicUser(u) {
 
 export function buildSnapshot(me) {
   // Réglages propres au membre connecté (thème, messages, demandes d'amis).
-  const mySettings = { theme: me.theme === 'dark' ? 'dark' : 'light', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0 };
+  const mySettings = { theme: me.theme === 'dark' ? 'dark' : 'light', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0 };
   const servers = all(
     `SELECT s.* FROM servers s JOIN memberships m ON m.server_id = s.id
      WHERE m.user_id = ? ORDER BY s.created_at`,
@@ -161,6 +161,7 @@ export function buildSnapshot(me) {
     channels: channels.map((c) => ({ id: c.id, server_id: c.server_id, name: c.name, type: c.type, readonly: !!c.readonly })),
     messages,
     friendships: friendships.map((f) => ({ id: f.id, from: f.from_id, to: f.to_id, status: f.status })),
+    hiddenDmPeers: [...hiddenSince.keys()],
     dms: dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, created_at: d.created_at, status: d.status })),
     // Espaces publics (liste « Communauté ») : sans code d'invitation.
     communities: communities.map((c) => ({ ...c, is_member: ids_member.has(c.id) })),
