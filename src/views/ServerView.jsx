@@ -72,6 +72,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const [text, setText] = useState('');
   const [membersOpen, setMembersOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [error, setError] = useState('');
   const [, setVoiceTick] = useState(0);
   // Salon ouvert : on le marque comme lu dès qu'il a des messages non lus.
@@ -99,6 +100,13 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const canManage = canManageChannels(s, serverId, me.id);
   const myVoice = s.voice.find((v) => v.user_id === me.id);
   const myVoiceChannel = channels.find((c) => c.id === myVoice?.channel_id);
+  // Rejoindre un vocal ouvre directement la vue « En vocal » (téléphone).
+  const voiceId = myVoiceChannel?.id ?? null;
+  const prevVoiceId = useRef(null);
+  useEffect(() => {
+    if (voiceId && voiceId !== prevVoiceId.current) setVoiceOpen(true);
+    prevVoiceId.current = voiceId;
+  }, [voiceId]);
   const members = membersOf(s, serverId).sort(
     (a, b) => roleRank(s, serverId, a.id) - roleRank(s, serverId, b.id) || a.pseudo.localeCompare(b.pseudo),
   );
@@ -219,10 +227,13 @@ export default function ServerView({ serverId, channelId, goHome }) {
       {/* Barre d'en-tête de l'espace */}
       {server.banner && (
         <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft max-lg:hidden">
-          <img src={server.banner} alt="" draggable={false} className="h-full w-full object-cover object-center" />
+          <img src={server.banner} alt="" draggable={false} className="h-full w-full scale-105 object-cover object-center blur-[2px]" />
         </div>
       )}
       <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">
+        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu de l’espace" className="ml-auto hidden rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 max-lg:block">
+          Menu
+        </button>
         <div className="flex min-w-0 items-center gap-3" onContextMenu={(e) => {
           if (isOwner) { e.preventDefault(); return; }
           openMenu(e, [{ label: 'Quitter l’espace', danger: true, onClick: () => { if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); } }]);
@@ -245,12 +256,12 @@ export default function ServerView({ serverId, channelId, goHome }) {
             </button>
           )}
           {isOwner && (
-            <button onClick={() => openModal('espace-settings', { serverId })} className="btn-ghost !rounded-full !py-2.5">
+            <button onClick={() => openModal('espace-settings', { serverId })} className="btn-ghost !rounded-full !py-2.5 max-lg:hidden">
               <Icon name="settings" className="h-4 w-4" />
               Paramètres
             </button>
           )}
-          <button onClick={() => openModal('invite', { serverId })} className="btn-primary !rounded-full !py-2.5">
+          <button onClick={() => openModal('invite', { serverId })} className="btn-primary !rounded-full !py-2.5 max-lg:hidden">
             Inviter
           </button>
         </div>
@@ -334,7 +345,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
           <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
             <span className="pill !bg-brand-100 !px-3 !py-1 !text-sm !font-bold !text-brand-700">Salon #{current?.name ?? '—'}</span>
             {/* Membres : sur téléphone et tablette, la liste s'ouvre dans une fenêtre */}
-            <button type="button" onClick={() => setMembersOpen(true)} className="ml-auto rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 lg:hidden">
+            <button type="button" onClick={() => setMembersOpen(true)} className="ml-auto rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 hidden">
               Membres
             </button>
             <Modal open={membersOpen} title="Membres" onClose={() => setMembersOpen(false)}>
@@ -369,6 +380,14 @@ export default function ServerView({ serverId, channelId, goHome }) {
               <span className="ml-auto shrink-0 text-brand-600">Ouvrir</span>
             </button>
           )}
+          <Modal open={menuOpen} title={server.name} onClose={() => setMenuOpen(false)}>
+            <div className="flex flex-col gap-2">
+              <button type="button" onClick={() => { setMenuOpen(false); openModal('invite', { serverId }); }} className="btn-primary min-h-[48px] justify-start">Inviter des membres</button>
+              <button type="button" onClick={() => { setMenuOpen(false); setMembersOpen(true); }} className="btn-ghost min-h-[48px] justify-start">Voir les membres</button>
+              {isOwner && <button type="button" onClick={() => { setMenuOpen(false); openModal('espace-settings', { serverId }); }} className="btn-ghost min-h-[48px] justify-start">Paramètres de l’espace</button>}
+              {!isOwner && <button type="button" onClick={() => { setMenuOpen(false); if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); }} className="btn-danger min-h-[48px] justify-start">Quitter l’espace</button>}
+            </div>
+          </Modal>
           {voiceOpen && myVoiceChannel && (
             <VoiceScreen
               channelName={myVoiceChannel.name}
