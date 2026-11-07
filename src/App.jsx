@@ -3,6 +3,7 @@ import Splash from './components/Splash';
 import { getMe, getState, leaveVoice, refresh, setVoiceMutedRemote } from './lib/store';
 import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/voice';
 import { playJoin, playLeave } from './lib/sounds';
+import { startPresence, stopPresence } from './lib/presence';
 import { getToken } from './lib/api';
 import { ContextMenu, UIContext, useStore } from './components/ui';
 import Layout from './components/Layout';
@@ -59,6 +60,13 @@ export default function App() {
   // Thème clair / sombre choisi dans Paramètres.
   const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
+  // Présence tant que la page est ouverte (indépendante de la taille de la fenêtre).
+  const loggedIn = !!me;
+  useEffect(() => {
+    if (loggedIn) startPresence(getToken());
+    else stopPresence();
+    return undefined;
+  }, [loggedIn]);
   // Vocal : recalculé à chaque changement de l'état (clic optimiste, réponse serveur ou synchronisation).
   useEffect(() => { reconcileVoice(); }, [s]);
   const [view, setView] = useState(() => viewFromPath(window.location.pathname));

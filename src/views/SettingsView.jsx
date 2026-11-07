@@ -61,7 +61,7 @@ export default function SettingsView() {
 
   return (
     <div className="thin-scroll flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <PageBanner icon="settings" title="Paramètres" subtitle="Gérez l’application : apparence, messages et demandes." />
 
         <Card title="Apparence">

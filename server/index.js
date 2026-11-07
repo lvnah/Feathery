@@ -10,8 +10,11 @@ import { publicUser } from './sync.js';
 import { db } from './db.js';
 import { getVersion, bumpVersion } from './version.js';
 import { ensureAdmin } from './seed.js';
+import { getImage, migrateInlineImages } from './images.js';
 
 ensureAdmin();
+const migrated = migrateInlineImages();
+if (migrated) console.log(`${migrated} image(s) déplacée(s) hors de la synchronisation.`);
 
 const PORT = Number(process.env.PORT || 3001);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -93,6 +96,20 @@ async function handleApi(req, res, path) {
   if (req.method === 'POST' && path === '/api/presence/leave') {
     const body = await readJson(req);
     setOffline(String(body.token ?? ''));
+    return send(res, 200, { ok: true });
+  }
+  // Images servies par URL : le navigateur les garde en cache.
+  const imgMatch = path.match(/^\/api\/img\/([a-f0-9]+)$/);
+  if (req.method === 'GET' && imgMatch) {
+    const row = getImage(imgMatch[1]);
+    if (!row) return send(res, 404, { error: 'Image introuvable.' });
+    res.writeHead(200, { 'Content-Type': row.mime, 'Cache-Control': 'public, max-age=31536000, immutable' });
+    return res.end(row.data);
+  }
+  // Battement de cœur de présence (léger, sans synchronisation complète).
+  if (req.method === 'POST' && path === '/api/presence/ping') {
+    const me = requireUser(req);
+    db.prepare('UPDATE users SET last_activity = ? WHERE id = ?').run(Date.now(), me.id);
     return send(res, 200, { ok: true });
   }
   // Recherche d'un membre (pseudo et tag) : sur tous les comptes, pas seulement ceux déjà connus.

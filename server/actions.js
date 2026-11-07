@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { db } from './db.js';
 import { hashPassword, verifyPassword, createSession, deleteSession } from './auth.js';
 import { publicUser } from './sync.js';
+import { storeImage } from './images.js';
 import { COUNTRY_CODES } from './countries.js';
 
 export class HttpError extends Error {
@@ -78,6 +79,7 @@ const GIF_LIMITS = { avatar: 12_000_000, banner: 17_000_000, espace: 17_000_000 
 const NAME_COLORS_BASIC = ['#111827', '#dc2626', '#2563eb', '#16a34a', '#9333ea', '#ea580c'];
 const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#be123c', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy'];
 const imageData = (value, kind, isPlus = false) => {
+  // Renvoie l'URL de l'image enregistrée (les données ne sont plus gardées dans la ligne).
   const v = String(value ?? '').trim();
   if (!v) return '';
   if (!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v)) {
@@ -87,7 +89,7 @@ const imageData = (value, kind, isPlus = false) => {
   if (isGif && !isPlus) fail('Les GIF animés sont réservés aux membres PLUS.', 403);
   const limit = isGif && GIF_LIMITS[kind] ? GIF_LIMITS[kind] : IMAGE_LIMITS[kind];
   if (v.length > limit) fail('Image trop lourde. Choisissez une image plus légère.');
-  return v;
+  return storeImage(v) ?? fail('Image illisible.');
 };
 
 const handlers = {

@@ -45,7 +45,7 @@ export default function FriendsView() {
 
   return (
     <div className="thin-scroll flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <PageBanner icon="users" title="Amis" subtitle="Ajoutez vos amis, répondez aux demandes et discutez avec eux." />
 
         <section className="panel p-6">

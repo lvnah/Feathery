@@ -3,7 +3,7 @@ import { db } from './db.js';
 
 // Fenêtre de présence : un membre est « en ligne » si son heartbeat est plus récent que ce délai.
 // Un onglet réduit est ralenti par le navigateur : on reste « en ligne » tant qu'on n'est pas vraiment parti.
-export const ONLINE_WINDOW_MS = 120_000;
+export const ONLINE_WINDOW_MS = 60_000;
 
 const all = (sql, ...p) => db.prepare(sql).all(...p);
 const marks = (ids) => ids.map(() => '?').join(',') || 'NULL';
