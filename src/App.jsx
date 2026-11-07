@@ -4,6 +4,7 @@ import { getMe, getState, leaveVoice, refresh, setVoiceMutedRemote } from './lib
 import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/voice';
 import { playJoin, playLeave } from './lib/sounds';
 import { startPresence, stopPresence } from './lib/presence';
+import { startEvents, stopEvents } from './lib/events';
 import { getToken } from './lib/api';
 import { ContextMenu, UIContext, useStore } from './components/ui';
 import Layout from './components/Layout';
@@ -63,8 +64,13 @@ export default function App() {
   // Présence tant que la page est ouverte (indépendante de la taille de la fenêtre).
   const loggedIn = !!me;
   useEffect(() => {
-    if (loggedIn) startPresence(getToken());
-    else stopPresence();
+    if (loggedIn) {
+      startPresence(getToken());
+      startEvents(() => refresh());
+    } else {
+      stopPresence();
+      stopEvents();
+    }
     return undefined;
   }, [loggedIn]);
   // Vocal : recalculé à chaque changement de l'état (clic optimiste, réponse serveur ou synchronisation).
@@ -89,7 +95,7 @@ export default function App() {
     let alive = true;
     const tick = () => refresh().finally(() => alive && setBooting(false));
     tick();
-    const id = setInterval(tick, 1500);
+    const id = setInterval(tick, 3000); // filet de sécurité : le flux d'événements prévient en temps réel
     setVoiceErrorHandler((msg) => {
       toast(msg);
       leaveVoice().catch(() => {});

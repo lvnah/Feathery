@@ -8,7 +8,7 @@ import { buildSnapshot } from './sync.js';
 import { HttpError, login, logout, register, runAction } from './actions.js';
 import { publicUser } from './sync.js';
 import { db } from './db.js';
-import { getVersion, bumpVersion } from './version.js';
+import { getVersion, bumpVersion, onVersion, offVersion } from './version.js';
 import { ensureAdmin } from './seed.js';
 import { getImage, migrateInlineImages } from './images.js';
 
@@ -105,6 +105,17 @@ async function handleApi(req, res, path) {
     if (!row) return send(res, 404, { error: 'Image introuvable.' });
     res.writeHead(200, { 'Content-Type': row.mime, 'Cache-Control': 'public, max-age=31536000, immutable' });
     return res.end(row.data);
+  }
+  // Flux d'événements : le serveur prévient le client dès que les données changent (pas d'attente d'interrogation).
+  if (req.method === 'GET' && path === '/api/events') {
+    requireUser(req);
+    res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+    const push = (v) => res.write(`data: ${v}\n\n`);
+    res.write(`data: ${getVersion()}\n\n`);
+    onVersion(push);
+    const ping = setInterval(() => res.write(': ping\n\n'), 25_000);
+    req.on('close', () => { clearInterval(ping); offVersion(push); });
+    return undefined;
   }
   // Battement de cœur de présence (léger, sans synchronisation complète).
   if (req.method === 'POST' && path === '/api/presence/ping') {

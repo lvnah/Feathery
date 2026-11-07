@@ -30,15 +30,29 @@ async function send(toId, kind, payload) {
   }
 }
 
+// Les navigateurs mobiles refusent de lancer un son sans geste : on réessaie au prochain toucher.
+const pendingAudio = new Set();
+function playRemote(el) {
+  const p = el.play?.();
+  if (p && p.catch) p.then(() => pendingAudio.delete(el)).catch(() => pendingAudio.add(el));
+}
+['click', 'touchend', 'keydown'].forEach((evt) =>
+  document.addEventListener(evt, () => {
+    for (const el of [...pendingAudio]) playRemote(el);
+  }, true),
+);
+
 function attachRemoteAudio(peerId, stream) {
   let audio = session.peers.get(peerId)?.audio;
   if (!audio) {
     audio = document.createElement('audio');
     audio.autoplay = true;
+    audio.playsInline = true;
     audio.dataset.peer = peerId;
     document.body.appendChild(audio);
   }
   audio.srcObject = stream;
+  playRemote(audio);
   return audio;
 }
 
@@ -69,6 +83,7 @@ function closePeer(peerId) {
   if (!entry) return;
   entry.pc.close();
   entry.audio?.remove();
+  if (entry.audio) pendingAudio.delete(entry.audio);
   session.peers.delete(peerId);
 }
 
