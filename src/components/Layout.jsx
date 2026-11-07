@@ -54,11 +54,11 @@ export default function Layout({ view, children }) {
   return (
     <div className="flex h-dvh gap-4 p-3 sm:p-4">
       <aside
-        className={`panel sidebar-drawer fixed inset-y-4 left-4 z-40 flex w-72 flex-col gap-6 overflow-hidden p-5 lg:static lg:z-auto lg:flex lg:w-64 lg:shrink-0 ${
+        className={`panel sidebar-drawer fixed inset-y-4 left-4 z-40 flex w-72 flex-col gap-4 overflow-y-auto p-5 lg:static lg:gap-5 lg:z-auto lg:flex lg:w-64 lg:shrink-0 ${
           drawer ? 'translate-x-0' : '-translate-x-[120%] lg:translate-x-0'
         }`}
       >
-        <div className="flex items-center gap-3 px-2 pt-1">
+        <div className="hidden shrink-0 items-center gap-3 px-2 pt-1 lg:flex">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface shadow-soft">
             <LeafLogo />
           </span>
@@ -66,12 +66,12 @@ export default function Layout({ view, children }) {
           <span className="h-2 w-2 rounded-full bg-brand-500" />
         </div>
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex shrink-0 flex-col gap-1">
           {nav.map((item) => (
             <button
               key={item.key}
               onClick={() => navigate(item.view)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold transition ${
+              className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-[15px] font-semibold transition lg:py-3 ${
                 isActive(item) ? 'bg-brand-100 text-brand-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
@@ -82,9 +82,9 @@ export default function Layout({ view, children }) {
           ))}
         </nav>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex min-h-[10rem] shrink-0 flex-col gap-3">
           <p className="px-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">Mes espaces</p>
-          <div className="flex flex-col gap-2">
+          <div className="flex shrink-0 flex-col gap-2">
             <button onClick={() => { setDrawer(false); openModal('join'); }} className="btn-ghost !py-2.5">
               Rejoindre un espace
             </button>
@@ -111,8 +111,8 @@ export default function Layout({ view, children }) {
           </div>
         </div>
 
-        <InstallButton className="mb-3" />
-        <div className="flex items-center gap-3 border-t border-slate-100 pt-4">
+        <InstallButton className="mb-3 shrink-0" />
+        <div className="flex shrink-0 items-center gap-3 border-t border-slate-100 pt-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {/* Photo : choisir son statut. Nom et statut : ouvrir son profil. */}
             <button type="button" aria-label="Changer mon statut" onClick={(e) => openMenu(e, statusMenuItems)} className="shrink-0 rounded-full">

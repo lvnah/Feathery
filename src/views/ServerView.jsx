@@ -325,7 +325,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
 
       <div className="flex min-h-0 flex-1 gap-4">
         {/* Chat */}
-        <section className="panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <section className="panel flex h-[72dvh] min-w-0 shrink-0 flex-col overflow-hidden lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink">
           <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
             <span className="pill !bg-brand-100 !px-3 !py-1 !text-sm !font-bold !text-brand-700">Salon #{current?.name ?? '—'}</span>
             {/* Membres : sur téléphone et tablette, la liste s'ouvre dans une fenêtre */}
@@ -337,6 +337,22 @@ export default function ServerView({ serverId, channelId, goHome }) {
             </Modal>
           </div>
 
+          {myVoiceChannel && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-brand-100 bg-brand-50 px-4 py-3 sm:px-5">
+              <span className="flex items-center gap-2 text-sm font-bold text-brand-800">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
+                En vocal · {myVoiceChannel.name}
+                <span className="font-semibold text-brand-600">{voiceUsers(myVoiceChannel).length}/5</span>
+              </span>
+              <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
+                <button onClick={toggleMute} className={`btn-ghost !py-2 ${isVoiceMuted() ? 'text-red-600' : 'text-brand-700'}`} aria-label={isVoiceMuted() ? 'Activer le micro' : 'Couper le micro'}>
+                  <Icon name={isVoiceMuted() ? 'micOff' : 'mic'} className="h-4 w-4" />
+                  {isVoiceMuted() ? 'Micro coupé' : 'Micro ouvert'}
+                </button>
+                <button onClick={() => run(toast, () => leaveVoice())} className="btn-danger !py-2 max-sm:flex-1">Quitter</button>
+              </div>
+            </div>
+          )}
           {current ? (
             <>
               <div ref={listRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
@@ -394,22 +410,6 @@ export default function ServerView({ serverId, channelId, goHome }) {
             </>
           ) : (
             <EmptyState icon="hash" title="Aucun salon texte">Demandez à un membre disposant de la permission « gérer les salons » d’en créer un.</EmptyState>
-          )}
-          {myVoiceChannel && (
-            <div className="flex flex-wrap items-center gap-3 border-t border-brand-100 bg-brand-50 px-5 py-3">
-              <span className="flex items-center gap-2 text-sm font-bold text-brand-800">
-                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
-                En vocal · {myVoiceChannel.name}
-                <span className="font-semibold text-brand-600">{voiceUsers(myVoiceChannel).length}/5</span>
-              </span>
-              <div className="ml-auto flex gap-2">
-                <button onClick={toggleMute} className={`btn-ghost !py-2 ${isVoiceMuted() ? 'text-red-600' : 'text-brand-700'}`} aria-label={isVoiceMuted() ? 'Activer le micro' : 'Couper le micro'}>
-                  <Icon name={isVoiceMuted() ? 'micOff' : 'mic'} className="h-4 w-4" />
-                  {isVoiceMuted() ? 'Micro coupé' : 'Micro ouvert'}
-                </button>
-                <button onClick={() => run(toast, () => leaveVoice())} className="btn-danger !py-2">Quitter</button>
-              </div>
-            </div>
           )}
         </section>
 
