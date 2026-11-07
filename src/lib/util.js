@@ -45,8 +45,20 @@ export function fullName(user) {
   return user ? `${user.pseudo}#${user.tag}` : '';
 }
 
+// Bannières préréglées réservées aux membres PLUS : dégradés animés, créés pour Feathery.
+export const PLUS_BANNER_PRESETS = {
+  aurora: { label: 'Aurore', css: 'linear-gradient(120deg,#052e16,#0e7490,#7c3aed,#052e16)' },
+  ember: { label: 'Braise', css: 'linear-gradient(120deg,#7c2d12,#f97316,#fde68a,#7c2d12)' },
+  tide: { label: 'Marée', css: 'linear-gradient(120deg,#0c4a6e,#38bdf8,#e0f2fe,#0c4a6e)' },
+  nocturne: { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
+  meadow: { label: 'Prairie', css: 'linear-gradient(120deg,#14532d,#65a30d,#fef08a,#14532d)' },
+};
+
 export function bannerStyle(user) {
   const b = user?.banner || {};
+  if (b.type === 'preset' && PLUS_BANNER_PRESETS[b.key]) {
+    return { backgroundImage: PLUS_BANNER_PRESETS[b.key].css, backgroundSize: '300% 300%', animation: 'banner-drift 14s ease-in-out infinite' };
+  }
   if ((b.type === 'image' || b.type === 'url') && b.value) {
     const safe = String(b.value).replace(/["\\()]/g, '');
     return { backgroundImage: `url("${safe}")`, backgroundSize: 'cover', backgroundPosition: 'center' };

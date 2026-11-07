@@ -92,6 +92,12 @@ const imageData = (value, kind, isPlus = false) => {
   return storeImage(v) ?? fail('Image illisible.');
 };
 
+// Conversations masquées par membre : seul celui qui masque ne voit plus l'historique antérieur.
+db.exec(`CREATE TABLE IF NOT EXISTS dm_hidden (user_id TEXT NOT NULL, peer_id TEXT NOT NULL, since INTEGER NOT NULL, PRIMARY KEY (user_id, peer_id))`);
+
+// Bannières préréglées, réservées aux membres PLUS (dégradés animés faits pour Feathery).
+const PLUS_PRESETS = ['aurora', 'ember', 'tide', 'nocturne', 'meadow'];
+
 const handlers = {
   // Statistiques de jeux (3 maximum) : rang et heures, affichées dans le profil.
   setGames(me, p) {
@@ -107,6 +113,16 @@ const handlers = {
       run('DELETE FROM user_games WHERE user_id = ?', me.id);
       rows.forEach((r, i) => run('INSERT INTO user_games (user_id, position, game, rank, hours) VALUES (?, ?, ?, ?, ?)', me.id, i, r.game, r.rank, r.hours));
     });
+  },
+
+  // Supprimer un message privé que l'on a envoyé.
+  deleteDM(me, p) {
+    run('DELETE FROM dms WHERE id = ? AND from_id = ?', String(p.messageId ?? ''), me.id);
+  },
+
+  // Masquer une conversation pour soi (l'autre membre garde la sienne).
+  hideConversation(me, p) {
+    run('INSERT OR REPLACE INTO dm_hidden (user_id, peer_id, since) VALUES (?, ?, ?)', me.id, String(p.peerId ?? ''), now());
   },
 
   setStatus(me, p) {
@@ -154,6 +170,11 @@ const handlers = {
         bannerType = 'image';
         bannerValue = imageData(p.banner.value, 'banner', !!me.is_plus);
         if (!bannerValue) fail('Image de bannière manquante.');
+      } else if (p.banner.type === 'preset') {
+        if (!me.is_plus) fail('Les bannières préréglées sont réservées aux membres PLUS.', 403);
+        if (!PLUS_PRESETS.includes(p.banner.key)) fail('Bannière inconnue.');
+        bannerType = 'preset';
+        bannerValue = p.banner.key;
       } else {
         bannerType = 'gradient';
         bannerValue = String(Math.max(0, Math.min(5, Number(p.banner.index) || 0)));
@@ -287,8 +308,8 @@ const handlers = {
     const id = newId('s');
     return transaction(() => {
       run(
-        'INSERT INTO servers (id, name, icon, is_public, owner_id, invite_code, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        id, name, icon, p.isPublic === false ? 0 : 1, me.id, code, now(),
+        'INSERT INTO servers (id, name, icon, is_public, owner_id, invite_code, created_at, banner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        id, name, icon, p.isPublic === false ? 0 : 1, me.id, code, now(), p.banner ? imageData(p.banner, 'espace', !!me.is_plus) : '',
       );
       run('INSERT INTO memberships (server_id, user_id, joined_at) VALUES (?, ?, ?)', id, me.id, now());
       run('INSERT INTO channels (id, server_id, name, type, created_at) VALUES (?, ?, ?, ?, ?)', newId('c'), id, 'général', 'text', now());

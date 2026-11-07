@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createChannel, createServer, getMe, getUser, joinServer, regenerateInvite, reportUser, updateChannel, setChannelReadonly, setGames } from '../lib/store';
 import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, useStore, useUI } from './ui';
 import { fullName, isOnline, statusLabel, statusColor } from '../lib/util';
-import { fileToDataUrl, ICON_OPTS } from '../lib/images';
+import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
 import PlusBadge from './PlusBadge';
 import Flag from './Flag';
 import { countryName } from '../lib/countries';
@@ -46,8 +46,20 @@ function CreateServerModal({ onClose }) {
   const [icon, setIcon] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [code, setCode] = useState('');
+  const [banner, setBanner] = useState('');
+  const pickBanner = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      setBanner(file.type === 'image/gif' ? await readGif(file, GIF_MAX_BANNER, !!me.is_plus) : await fileToDataUrl(file, ESPACE_BANNER_OPTS));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
   const { error, busy, submit, setError } = useSubmit(async () => {
-    const res = await createServer({ name, icon, isPublic, customCode: code });
+    const res = await createServer({ name, icon, isPublic, customCode: code, banner });
     onClose();
     go({ name: 'server', serverId: res.id });
   });
@@ -76,6 +88,12 @@ function CreateServerModal({ onClose }) {
         <label className="flex flex-col gap-2"><Label>Code d’invitation personnalisé</Label>
           <input className="field font-mono uppercase disabled:opacity-50" value={code} maxLength={20} disabled={!me.is_plus}
             placeholder={me.is_plus ? 'Vide = code automatique' : 'Réservé aux membres PLUS'} onChange={(e) => setCode(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-2"><Label>Bannière (facultatif)</Label>
+          <div className="relative h-24 overflow-hidden rounded-2xl bg-slate-200 bg-cover bg-center" style={{ backgroundImage: banner ? `url("${banner}")` : undefined }}>
+            {!banner && <span className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">Aucune bannière</span>}
+          </div>
+          <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="text-sm" onChange={pickBanner} />
         </label>
         <ErrorLine>{error}</ErrorLine>
         <div className="mt-2 flex justify-end gap-2">

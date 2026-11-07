@@ -156,13 +156,6 @@ export default function Home() {
           {/* Bannière de bienvenue */}
           <HeroBanner onJoin={() => openModal('join')} />
 
-          {/* Statistiques en direct */}
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Stat icon="users" label="Membres inscrits" value={total} />
-            <Stat icon="chat" label="Membres en ligne" value={online} />
-            <Stat icon="bolt" label="Activité globale" value={`${percent}%`} />
-          </section>
-
           {/* Espaces ou tableau de bord vide */}
           <section className="panel flex min-h-64 flex-1 flex-col p-6">
             {servers.length === 0 ? (

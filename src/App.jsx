@@ -5,8 +5,6 @@ import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/
 import { playJoin, playLeave } from './lib/sounds';
 import { startPresence, stopPresence } from './lib/presence';
 import { startEvents, stopEvents } from './lib/events';
-import { completeSpotifyLogin, startSpotifyPlayer } from './lib/spotify';
-import SpotifyPlayer from './components/SpotifyPlayer';
 import { getToken } from './lib/api';
 import { ContextMenu, UIContext, useStore } from './components/ui';
 import Layout from './components/Layout';
@@ -63,15 +61,17 @@ export default function App() {
   // Thème clair / sombre choisi dans Paramètres.
   const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
-  // Retour de la connexion Spotify (URL /spotify-callback?code=…).
+  // Fermer la page du navigateur : passer hors ligne et quitter le vocal tout de suite.
+  // Réduire la fenêtre ou changer d'onglet ne déclenche pas cet événement : on reste connecté.
   useEffect(() => {
-    if (window.location.pathname !== '/spotify-callback') return;
-    const code = new URLSearchParams(window.location.search).get('code');
-    window.history.replaceState(null, '', '/');
-    if (!code) return;
-    completeSpotifyLogin(code)
-      .then(() => { toast('Spotify connecté'); startSpotifyPlayer(); })
-      .catch((err) => toast(err.message));
+    const leave = (e) => {
+      if (e && e.persisted) return;
+      const token = getToken();
+      if (!token || !navigator.sendBeacon) return;
+      navigator.sendBeacon('/api/presence/leave', new Blob([JSON.stringify({ token })], { type: 'application/json' }));
+    };
+    window.addEventListener('pagehide', leave);
+    return () => window.removeEventListener('pagehide', leave);
   }, []);
   // Présence tant que la page est ouverte (indépendante de la taille de la fenêtre).
   const loggedIn = !!me;
@@ -213,7 +213,6 @@ export default function App() {
   return (
     <UIContext.Provider value={ui}>
       {content}
-      {me && <SpotifyPlayer />}
       {splash && <Splash onDone={endSplash} />}
       <ModalHost modal={modal} onClose={closeModal} />
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} />}

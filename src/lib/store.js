@@ -180,7 +180,19 @@ export const messagesBadge = (s) => {
   return Object.values(u.dms).reduce((a, b) => a + b, 0) + u.requests.length;
 };
 export const createServer = (payload) => act('createServer', payload);
-export const setStatus = (status) => act('setStatus', { status });
+export const setStatus = (status) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, users: s.users.map((u) => (u.id === me.id ? { ...u, status } : u)) }));
+  return act('setStatus', { status });
+};
+export const deleteDM = (messageId) => {
+  patchLocal((s) => ({ ...s, dms: s.dms.filter((d) => d.id !== messageId) }));
+  return act('deleteDM', { messageId });
+};
+export const hideConversation = (peerId) => {
+  patchLocal((s) => ({ ...s, dms: s.dms.filter((d) => d.from !== peerId && d.to !== peerId) }));
+  return act('hideConversation', { peerId });
+};
 export const setVoiceMutedRemote = (muted) => {
   const me = state && getMe(state);
   if (me) patchLocal((s) => ({ ...s, voice: s.voice.map((v) => (v.user_id === me.id ? { ...v, muted } : v)) }));

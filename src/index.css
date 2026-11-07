@@ -236,3 +236,9 @@ html[data-theme="dark"] .hover\:border-brand-200:hover { border-color: #2f6b52 !
 .mobile-nav {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
+
+/* Bannières préréglées PLUS : le dégradé glisse doucement. */
+@keyframes banner-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
