@@ -121,6 +121,9 @@ addColumn('voice_connections', 'muted', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'custom_status', "TEXT NOT NULL DEFAULT ''");
 addColumn('users', 'name_color', "TEXT NOT NULL DEFAULT ''");
 addColumn('users', 'chat_bg', "TEXT NOT NULL DEFAULT ''");
+addColumn('users', 'theme', "TEXT NOT NULL DEFAULT 'light'");
+addColumn('users', 'dm_open', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('users', 'accept_friend_requests', 'INTEGER NOT NULL DEFAULT 1');
 addColumn('channels', 'readonly', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('servers', 'banner', "TEXT NOT NULL DEFAULT ''");
 // Statistiques de jeux affichées dans le profil (3 maximum par membre).

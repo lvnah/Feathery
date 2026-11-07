@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import { ModalHost } from './components/Modals';
 import Login from './views/Login';
 import PlusView from './views/PlusView';
+import SettingsView from './views/SettingsView';
 import Home from './views/Home';
 import ServerView from './views/ServerView';
 import MessagesView from './views/MessagesView';
@@ -38,6 +39,9 @@ function reconcileVoice() {
 export default function App() {
   const s = useStore();
   const me = s ? getMe(s) : null;
+  // Thème clair / sombre choisi dans Paramètres.
+  const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
+  useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
   const [view, setView] = useState(() => viewFromPath(window.location.pathname));
   const [modal, setModal] = useState(null);
   const [menu, setMenu] = useState(null);
@@ -166,6 +170,7 @@ export default function App() {
         {view.name === 'messages' && <MessagesView withId={view.withId} />}
         {view.name === 'friends' && <FriendsView />}
         {view.name === 'plus' && <PlusView />}
+        {view.name === 'settings' && <SettingsView />}
         {view.name === 'community' && <CommunityView />}
         {view.name === 'admin' && <AdminView />}
         {view.name === 'profile' && <ProfileView key={`${view.userId}-${!!view.edit}`} userId={view.userId} edit={!!view.edit} goBack={goHome} />}

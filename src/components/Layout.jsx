@@ -12,7 +12,7 @@ const NAV = [
   { key: 'community', label: 'Communauté', icon: 'search', view: { name: 'community' } },
   { key: 'friends', label: 'Ami(s)', icon: 'users', view: { name: 'friends' } },
   { key: 'plus', label: 'PLUS', icon: 'bolt', view: { name: 'plus' } },
-  { key: 'settings', label: 'Paramètres', icon: 'settings', view: { name: 'profile', userId: null } },
+  { key: 'settings', label: 'Paramètres', icon: 'settings', view: { name: 'settings' } },
 ];
 
 // Sidebar flottante (desktop) ou tiroir coulissant (mobile) + zone de contenu.
@@ -49,7 +49,7 @@ export default function Layout({ view, children }) {
     onClick: () => run(toast, () => setStatus(k)),
   }));
   const isActive = (item) =>
-    item.key === 'settings' ? view.name === 'profile' && view.userId === me.id && view.edit : view.name === item.key;
+    view.name === item.key;
 
   return (
     <div className="flex h-dvh gap-4 p-4">
@@ -70,7 +70,7 @@ export default function Layout({ view, children }) {
           {nav.map((item) => (
             <button
               key={item.key}
-              onClick={() => (item.key === 'settings' ? navigate({ name: 'profile', userId: me.id, edit: true }) : navigate(item.view))}
+              onClick={() => navigate(item.view)}
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[15px] font-semibold transition ${
                 isActive(item) ? 'bg-brand-100 text-brand-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'
               }`}

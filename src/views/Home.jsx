@@ -190,7 +190,7 @@ export default function Home() {
           <section className="panel p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-bold">Votre profil</h2>
-              <button onClick={() => go({ name: 'profile', userId: me.id, edit: true })} aria-label="Modifier mon profil" className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-300">
+              <button onClick={() => go({ name: 'profile', userId: me.id })} aria-label="Voir mon profil" className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-300">
                 <Icon name="settings" className="h-5 w-5" />
               </button>
             </div>
