@@ -5,7 +5,8 @@ import {
   assignRole, deleteMessage,
 } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal } from '../components/ui';
-import PlusBadge from '../components/PlusBadge';
+import PlusBadge, { RoleBadge } from '../components/PlusBadge';
+import VoiceScreen from '../components/VoiceScreen';
 import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
@@ -70,6 +71,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
 
   const [text, setText] = useState('');
   const [membersOpen, setMembersOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [error, setError] = useState('');
   const [, setVoiceTick] = useState(0);
   // Salon ouvert : on le marque comme lu dès qu'il a des messages non lus.
@@ -162,7 +164,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
       >
         <Avatar user={u} size="sm" showStatus />
         <span className="min-w-0">
-          <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-sm font-bold" style={{ color }}>{u.pseudo}</span>{u.is_plus ? <PlusBadge /> : null}</span>
+          <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-sm font-bold" style={{ color }}>{u.pseudo}</span><RoleBadge user={u} /></span>
           <span className="block truncate text-xs font-semibold text-slate-500">#{u.tag}</span>
           {voiceChannelOf(u.id) && (
             <span className="flex items-center gap-1 truncate text-xs font-bold text-brand-600">
@@ -341,7 +343,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
           </div>
 
           {myVoiceChannel && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-brand-100 bg-brand-50 px-4 py-3 sm:px-5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-brand-100 bg-brand-50 px-4 py-3 sm:px-5 max-lg:hidden">
               <span className="flex items-center gap-2 text-sm font-bold text-brand-800">
                 <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
                 En vocal · {myVoiceChannel.name}
@@ -355,6 +357,29 @@ export default function ServerView({ serverId, channelId, goHome }) {
                 <button onClick={() => run(toast, () => leaveVoice())} className="btn-danger !py-2 max-sm:flex-1">Quitter</button>
               </div>
             </div>
+          )}
+          {myVoiceChannel && (
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(true)}
+              className="flex items-center gap-3 border-b border-brand-100 bg-brand-50 px-4 py-2.5 text-left text-sm font-bold text-brand-800 lg:hidden"
+            >
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
+              <span className="min-w-0 truncate">En vocal · {myVoiceChannel.name} · {voiceUsers(myVoiceChannel).length}/5</span>
+              <span className="ml-auto shrink-0 text-brand-600">Ouvrir</span>
+            </button>
+          )}
+          {voiceOpen && myVoiceChannel && (
+            <VoiceScreen
+              channelName={myVoiceChannel.name}
+              users={voiceUsers(myVoiceChannel)}
+              selfId={me.id}
+              isMuted={isVoiceMuted()}
+              voiceMuted={voiceMuted}
+              onToggleMute={toggleMute}
+              onLeave={() => { setVoiceOpen(false); run(toast, () => leaveVoice()); }}
+              onClose={() => setVoiceOpen(false)}
+            />
           )}
           {current ? (
             <>
@@ -374,7 +399,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                           <button onClick={() => openModal('mini', { userId: author.id, serverId })} onContextMenu={(e) => memberMenu(e, author.id)} className="font-bold hover:underline" style={{ color }}>
                             {author.pseudo}
                           </button>
-                          {author.is_plus ? <PlusBadge /> : null}
+                          <RoleBadge user={author} />
                         </div>
                         <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900">{m.content}</p>
                       </div>

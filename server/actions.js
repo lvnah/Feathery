@@ -5,7 +5,7 @@ import { db } from './db.js';
 import { hashPassword, verifyPassword, createSession, deleteSession } from './auth.js';
 import { publicUser } from './sync.js';
 import { storeImage } from './images.js';
-import { consumeToken, mailConfigured, sendVerification } from './mail.js';
+import { CONFIRM_EMAIL, consumeToken, mailConfigured, sendVerification } from './mail.js';
 import { COUNTRY_CODES } from './countries.js';
 
 export class HttpError extends Error {
@@ -83,6 +83,8 @@ const imageData = (value, kind, isPlus = false) => {
   // Renvoie l'URL de l'image enregistrée (les données ne sont plus gardées dans la ligne).
   const v = String(value ?? '').trim();
   if (!v) return '';
+  // Image déjà enregistrée (adresse /api/img/…) : on la garde telle quelle.
+  if (/^\/api\/img\/[a-f0-9]+$/.test(v)) return v;
   if (!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v)) {
     fail('Format non pris en charge : PNG, JPEG, WebP ou GIF.');
   }
@@ -727,7 +729,7 @@ export async function register({ pseudo, password, tag: wanted, email: rawEmail 
   }
   const chosen = String(wanted ?? '').trim();
   if (chosen && !/^\d{4}$/.test(chosen)) fail('Le tag doit contenir exactement 4 chiffres.');
-  const confirm = mailConfigured();
+  const confirm = CONFIRM_EMAIL && mailConfigured();
   const id = transaction(() => {
     let tag = null;
     if (chosen) {
@@ -795,7 +797,7 @@ export async function changeEmail(me, p) {
   if (!verifyPassword(String(p.password ?? ''), me.password_hash)) fail('Mot de passe incorrect.', 401);
   const email = cleanEmail(p.email);
   if (emailTaken(email, me.id)) fail('Cette adresse e-mail est déjà utilisée.', 409);
-  const confirm = mailConfigured();
+  const confirm = CONFIRM_EMAIL && mailConfigured();
   run('UPDATE users SET email = ?, email_verified = ? WHERE id = ?', email, confirm ? 0 : 1, me.id);
   if (confirm) await sendVerification(me.id, email);
 }

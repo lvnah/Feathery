@@ -3,7 +3,7 @@ import { createChannel, createServer, getMe, getUser, joinServer, regenerateInvi
 import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, useStore, useUI } from './ui';
 import { fullName, isOnline, statusLabel, statusColor } from '../lib/util';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
-import PlusBadge from './PlusBadge';
+import PlusBadge, { RoleBadge } from './PlusBadge';
 import Flag from './Flag';
 import { countryName } from '../lib/countries';
 import { roleColorOf, roleNameOf } from '../lib/store';
@@ -181,7 +181,7 @@ function MiniProfileModal({ userId, serverId, onClose }) {
           Voir profil complet
         </button>
         <div>
-          <p className="flex items-center gap-2 text-lg font-extrabold" style={{ color }}>{user.pseudo}{user.is_plus ? <PlusBadge /> : null}{user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}</p>
+          <p className="flex items-center gap-2 text-lg font-extrabold" style={{ color }}>{user.pseudo}<RoleBadge user={user} />{user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}</p>
           <p className="text-sm text-slate-400">#{user.tag} · <span style={{ color: statusColor(user) }}>{statusLabel(user)}</span></p>
         </div>
         <p className="text-sm text-slate-600">{user.bio || 'Aucune biographie.'}</p>

@@ -4,7 +4,7 @@ import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '..
 import { BANNER_GRADIENTS, PLUS_BANNER_PRESETS, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
 import { NAME_COLORS_BASIC, NAME_COLORS_PLUS } from '../lib/util';
-import PlusBadge from '../components/PlusBadge';
+import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import Flag from '../components/Flag';
 import CountrySelect from '../components/CountrySelect';
 import { countryName } from '../lib/countries';
@@ -215,7 +215,7 @@ function PublicProfile({ user, goBack }) {
               <div className="min-w-0">
                 <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-extrabold">
                   <span className="truncate" style={nameStyle(user)}>{user.pseudo}</span> <span className="text-base font-semibold text-slate-400">#{user.tag}</span>
-                  {user.is_plus ? <PlusBadge /> : null}
+                  <RoleBadge user={user} />
                   {user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}
                 </h2>
                 <p className={`text-sm font-semibold ${isOnline(user) ? 'text-brand-600' : 'text-slate-400'}`}><span style={{ color: statusColor(user) }}>{statusLabel(user)}</span></p>

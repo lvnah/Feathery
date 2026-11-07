@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { acceptDM, deleteDM, hideConversation, friendsOf, friendshipBetween, getMe, getUser, markDmRead, refuseDM, respondFriendRequest, sendDM, sendFriendRequest, unreadCount } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon } from '../components/ui';
 import { formatStamp, isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
-import PlusBadge from '../components/PlusBadge';
+import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
 
@@ -117,7 +117,7 @@ export default function MessagesView({ withId }) {
               <button onClick={() => go({ name: 'profile', userId: partner.id })} className="flex min-w-0 items-center gap-3 text-left">
                 <Avatar user={partner} size="sm" showStatus />
                 <span className="min-w-0">
-                  <span className="flex items-center gap-2 font-bold"><span className="truncate" style={nameStyle(partner)}>{partner.pseudo}</span>{partner.is_plus ? <PlusBadge /> : null}</span>
+                  <span className="flex items-center gap-2 font-bold"><span className="truncate" style={nameStyle(partner)}>{partner.pseudo}</span><RoleBadge user={partner} /></span>
                   <span className="block text-xs text-slate-500"><span style={{ color: statusColor(partner) }}>{statusLabel(partner)}</span></span>
                 </span>
               </button>
@@ -166,7 +166,7 @@ export default function MessagesView({ withId }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span onClick={() => openUser(author.id)} className="cursor-pointer font-bold text-slate-900 hover:underline" style={nameStyle(author)}>{author.pseudo}</span>
-                        {author.is_plus ? <PlusBadge /> : null}
+                        <RoleBadge user={author} />
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>
                       <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{d.content}</p>
