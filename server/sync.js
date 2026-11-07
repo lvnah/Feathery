@@ -29,6 +29,8 @@ export function publicUser(u) {
 }
 
 export function buildSnapshot(me) {
+  // Réglages propres au membre connecté (thème, messages, demandes d'amis).
+  const mySettings = { theme: me.theme === 'dark' ? 'dark' : 'light', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0 };
   const servers = all(
     `SELECT s.* FROM servers s JOIN memberships m ON m.server_id = s.id
      WHERE m.user_id = ? ORDER BY s.created_at`,
@@ -91,7 +93,7 @@ export function buildSnapshot(me) {
     .get(Date.now() - ONLINE_WINDOW_MS);
 
   const communities = all(
-    `SELECT s.id, s.name, s.icon, s.created_at, u.pseudo AS owner_pseudo, u.tag AS owner_tag,
+    `SELECT s.id, s.name, s.icon, s.banner, s.created_at, u.pseudo AS owner_pseudo, u.tag AS owner_tag,
        (SELECT COUNT(*) FROM memberships m WHERE m.server_id = s.id) AS members
      FROM servers s JOIN users u ON u.id = s.owner_id WHERE s.is_public = 1 ORDER BY s.created_at DESC LIMIT 200`,
   );
@@ -127,8 +129,8 @@ export function buildSnapshot(me) {
       channels: Object.fromEntries(channelUnread.map((r) => [r.channel, r.n])),
     },
     stats: { total: counts.total, online: counts.online },
-    me: publicUser(me),
-    users: users.map((u) => ({ ...publicUser(u), games: gameRows.filter((g) => g.user_id === u.id).map((g) => ({ game: g.game, rank: g.rank })), spaces: spaceRows.filter((x) => x.user_id === u.id).map((x) => ({ id: x.id, name: x.name, icon: x.icon })) })),
+    me: { ...publicUser(me), settings: mySettings },
+    users: users.map((u) => ({ ...publicUser(u), ...(u.id === me.id ? { settings: mySettings } : {}), games: gameRows.filter((g) => g.user_id === u.id).map((g) => ({ game: g.game, rank: g.rank })), spaces: spaceRows.filter((x) => x.user_id === u.id).map((x) => ({ id: x.id, name: x.name, icon: x.icon })) })),
     servers: servers.map((s) => ({
       id: s.id,
       name: s.name,

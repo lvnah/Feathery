@@ -173,6 +173,7 @@ const handlers = {
     }
     if (!target) fail('Utilisateur introuvable. Format attendu : Pseudo#1234', 404);
     if (target.id === me.id) fail('Vous ne pouvez pas vous ajouter vous-même.');
+    if (target.accept_friend_requests === 0) fail('Ce membre n’accepte pas les demandes d’ami.', 403);
     const existing = one(
       'SELECT * FROM friendships WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)',
       me.id, target.id, target.id, me.id,
@@ -218,7 +219,9 @@ const handlers = {
     // Le destinataire m'a déjà écrit une demande : je réponds, donc j'accepte.
     const theirRequest = one("SELECT 1 FROM dms WHERE status = 'request' AND from_id = ? AND to_id = ? LIMIT 1", p.toId, me.id);
     if (theirRequest) run("UPDATE dms SET status = 'ok' WHERE status = 'request' AND from_id = ? AND to_id = ?", p.toId, me.id);
-    const status = accepted || theirRequest ? 'ok' : 'request';
+    // Si le destinataire autorise les messages directs, pas de demande à accepter.
+    const openDm = !!one('SELECT dm_open FROM users WHERE id = ?', p.toId)?.dm_open;
+    const status = accepted || theirRequest || openDm ? 'ok' : 'request';
     if (status === 'request') {
       const pending = one("SELECT COUNT(*) AS n FROM dms WHERE status = 'request' AND from_id = ? AND to_id = ?", me.id, p.toId).n;
       if (pending >= 3) fail('Demande envoyée. Attendez sa réponse avant d’écrire à nouveau.', 429);
@@ -227,6 +230,19 @@ const handlers = {
       'INSERT INTO dms (id, from_id, to_id, content, created_at, status) VALUES (?, ?, ?, ?, ?, ?)',
       newId('d'), me.id, p.toId, content, now(), status,
     );
+  },
+
+  // Réglages du compte : thème, messages privés directs, demandes d'amis.
+  updateSettings(me, p) {
+    const patch = [];
+    const args = [];
+    if (p.theme !== undefined) {
+      if (!['light', 'dark'].includes(p.theme)) fail('Thème inconnu.');
+      patch.push('theme = ?'); args.push(p.theme);
+    }
+    if (p.dmOpen !== undefined) { patch.push('dm_open = ?'); args.push(p.dmOpen ? 1 : 0); }
+    if (p.acceptFriendRequests !== undefined) { patch.push('accept_friend_requests = ?'); args.push(p.acceptFriendRequests ? 1 : 0); }
+    if (patch.length) run(`UPDATE users SET ${patch.join(', ')} WHERE id = ?`, ...args, me.id);
   },
 
   acceptDM(me, p) {

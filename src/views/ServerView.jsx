@@ -4,10 +4,11 @@ import {
   leaveVoice, membersOf, membership, roleColorOf, roleNameOf, roleRank, rolesOf, sendFriendRequest, sendMessage,
   assignRole, deleteMessage,
 } from '../lib/store';
-import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon } from '../components/ui';
+import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal } from '../components/ui';
 import PlusBadge from '../components/PlusBadge';
 import { isVoiceMuted, setVoiceMuted } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
+import { playMute, playUnmute } from '../lib/sounds';
 import { formatStamp, isOnline } from '../lib/util';
 
 // Exécute une action async et affiche le résultat dans un toast.
@@ -68,6 +69,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const messages = current ? s.messages.filter((m) => m.channel_id === current.id) : [];
 
   const [text, setText] = useState('');
+  const [membersOpen, setMembersOpen] = useState(false);
   const [error, setError] = useState('');
   const [, setVoiceTick] = useState(0);
   // Salon ouvert : on le marque comme lu dès qu'il a des messages non lus.
@@ -111,6 +113,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
     const next = !isVoiceMuted();
     setVoiceMuted(next);
     setVoiceTick((t) => t + 1);
+    if (next) playMute(); else playUnmute();
     setVoiceMutedRemote(next).catch(() => {});
   };
   const voiceUsers = (c) => s.voice.filter((v) => v.channel_id === c.id).map((v) => getUser(s, v.user_id)).filter(Boolean);
@@ -325,6 +328,13 @@ export default function ServerView({ serverId, channelId, goHome }) {
         <section className="panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
             <span className="pill !bg-brand-100 !px-3 !py-1 !text-sm !font-bold !text-brand-700">Salon #{current?.name ?? '—'}</span>
+            {/* Membres : sur téléphone et tablette, la liste s'ouvre dans une fenêtre */}
+            <button type="button" onClick={() => setMembersOpen(true)} className="ml-auto rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 lg:hidden">
+              Membres
+            </button>
+            <Modal open={membersOpen} title="Membres" onClose={() => setMembersOpen(false)}>
+              {membersPanel}
+            </Modal>
           </div>
 
           {current ? (

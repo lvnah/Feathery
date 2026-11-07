@@ -113,9 +113,9 @@ export function Modal({ open, title, onClose, children, width = 'max-w-md' }) {
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="mobile-overlay absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={onClose} />
-      <div role="dialog" aria-modal="true" className={`panel relative max-h-[90dvh] w-full ${width} overflow-y-auto thin-scroll p-6`}>
+      <div role="dialog" aria-modal="true" className={`panel relative max-h-[92dvh] w-full ${width} overflow-y-auto thin-scroll rounded-b-none p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:rounded-b-[2.5rem] sm:pb-6`}>
         <button onClick={onClose} className="absolute right-5 top-5 z-10 rounded-full bg-surface/90 p-2 text-slate-500 shadow-soft hover:text-slate-900" aria-label="Fermer">
           <Icon name="x" className="h-4 w-4" />
         </button>
