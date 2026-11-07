@@ -22,7 +22,9 @@ export function publicUser(u) {
     custom_status: u.custom_status ?? '',
     status: u.status ?? 'online',
     banner:
-      u.banner_type === 'image' || u.banner_type === 'url'
+      u.banner_type === 'preset'
+        ? { type: 'preset', key: u.banner_value }
+        : u.banner_type === 'image' || u.banner_type === 'url'
         ? { type: 'image', value: u.banner_value }
         : { type: 'gradient', index: Number(u.banner_value) || 0 },
     last_activity: u.last_activity,
@@ -62,11 +64,18 @@ export function buildSnapshot(me) {
       )
     : [];
   const friendships = all('SELECT * FROM friendships WHERE from_id = ? OR to_id = ?', me.id, me.id);
-  const dms = all(
+  const allDms = all(
     'SELECT * FROM dms WHERE from_id = ? OR to_id = ? ORDER BY created_at DESC LIMIT 2000',
     me.id,
     me.id,
   ).reverse();
+  // Conversations masquées par ce membre : seuls les messages postérieurs au masquage restent visibles.
+  const hiddenSince = new Map(all('SELECT peer_id, since FROM dm_hidden WHERE user_id = ?', me.id).map((r) => [r.peer_id, r.since]));
+  const dms = allDms.filter((d) => {
+    const peer = d.from_id === me.id ? d.to_id : d.from_id;
+    const since = hiddenSince.get(peer);
+    return since === undefined || d.created_at > since;
+  });
   const voice = cIds.length
     ? all(`SELECT * FROM voice_connections WHERE channel_id IN (${marks(cIds)})`, ...cIds)
     : [];

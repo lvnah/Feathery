@@ -47,8 +47,8 @@ export default function PlusView() {
         </section>
 
         <section className="grid gap-4 md:grid-cols-2">
-          <PriceCard title="Mensuel" price="2,99 €" unit="par mois" note="Sans engagement, résiliable à tout moment." />
-          <PriceCard title="Annuel" price="29,90 €" unit="par an" note="2 mois offerts, soit 2,49 € par mois." highlight />
+          <PriceCard title="Mensuel" price="0,99 €" unit="par mois" note="Sans engagement, résiliable à tout moment." />
+          <PriceCard title="Annuel" price="10,99 €" unit="par an" note="Soit 0,92 € par mois, une réduction sur l’abonnement mensuel." highlight />
         </section>
 
         <section className="panel p-6 md:p-8">

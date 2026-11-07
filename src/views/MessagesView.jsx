@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { acceptDM, friendsOf, friendshipBetween, getMe, getUser, markDmRead, refuseDM, respondFriendRequest, sendDM, sendFriendRequest, unreadCount } from '../lib/store';
+import { acceptDM, deleteDM, hideConversation, friendsOf, friendshipBetween, getMe, getUser, markDmRead, refuseDM, respondFriendRequest, sendDM, sendFriendRequest, unreadCount } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon } from '../components/ui';
 import { formatStamp, isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
 import PlusBadge from '../components/PlusBadge';
@@ -93,6 +93,14 @@ export default function MessagesView({ withId }) {
                 <span className="block truncate text-xs text-slate-500">{last ? last.content : statusLabel(user)}</span>
               </span>
               <CountBadge n={unread.dms[user.id] || 0} />
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); if (window.confirm(`Supprimer la conversation avec ${user.pseudo} ?`)) run(toast, () => hideConversation(user.id)); }}
+                aria-label="Supprimer la conversation"
+                className="shrink-0 rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+              >
+                <Icon name="trash" className="h-4 w-4" />
+              </button>
             </div>
           ))}
         </div>
@@ -163,6 +171,11 @@ export default function MessagesView({ withId }) {
                       <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{d.content}</p>
                     </div>
                     <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(d.created_at)}</span>
+                    {d.from === me.id && (
+                      <button type="button" onClick={() => window.confirm('Supprimer ce message ?') && run(toast, () => deleteDM(d.id))} aria-label="Supprimer le message" className="shrink-0 rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600">
+                        <Icon name="trash" className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 );
               })}

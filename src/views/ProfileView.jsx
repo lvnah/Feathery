@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, setStatus, updateProfile } from '../lib/store';
 import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '../components/ui';
-import { BANNER_GRADIENTS, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
+import { BANNER_GRADIENTS, PLUS_BANNER_PRESETS, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
 import { NAME_COLORS_BASIC, NAME_COLORS_PLUS } from '../lib/util';
 import PlusBadge from '../components/PlusBadge';
@@ -29,7 +29,7 @@ function OwnProfile() {
   const [bio, setBio] = useState(me.bio || '');
   const [country, setCountry] = useState(me.country || '');
   const [nameColor, setNameColor] = useState(me.name_color || '');
-  const [banner, setBanner] = useState(me.banner?.type === 'image' ? me.banner : { type: 'gradient', index: me.banner?.index ?? 0 });
+  const [banner, setBanner] = useState(me.banner?.type === 'image' || me.banner?.type === 'preset' ? me.banner : { type: 'gradient', index: me.banner?.index ?? 0 });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -135,6 +135,24 @@ function OwnProfile() {
             <Field label="Photo de profil">
               <ImportButton onChange={pick(setAvatar, AVATAR_OPTS)} label={avatar ? 'Changer la photo' : 'Importer une photo'} />
             </Field>
+
+            {me.is_plus && (
+              <Field label="Bannières PLUS" accent>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(PLUS_BANNER_PRESETS).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      title={preset.label}
+                      aria-label={`Bannière ${preset.label}`}
+                      onClick={() => setBanner({ type: 'preset', key })}
+                      className={`h-12 w-24 rounded-xl border-2 ${banner.type === 'preset' && banner.key === key ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
+                      style={{ background: preset.css, backgroundSize: '300% 300%' }}
+                    />
+                  ))}
+                </div>
+              </Field>
+            )}
 
             <Field label="Bannière (GIF animé : PLUS)" accent>
               <ImportButton

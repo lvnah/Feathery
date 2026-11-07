@@ -44,6 +44,7 @@ function setOffline(token) {
   const user = userFromToken(token || null);
   if (!user) return;
   db.prepare('UPDATE users SET last_activity = 0 WHERE id = ?').run(user.id);
+  db.prepare('DELETE FROM voice_connections WHERE user_id = ?').run(user.id); // fermer la page = on quitte le vocal
   bumpVersion();
 }
 
