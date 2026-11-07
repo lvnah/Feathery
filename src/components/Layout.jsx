@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getMe, serversOf, logout, messagesBadge, serverUnread, unreadCount, leaveServer, setStatus } from '../lib/store';
+import { getMe, serversOf, logout, messagesBadge, serverUnread, unreadCount, leaveServer, setStatus, myVoice } from '../lib/store';
 import { STATUS_LABEL, STATUS_DOT, statusKey, statusLabel, statusColor, nameStyle } from '../lib/util';
 import { run } from '../views/ServerView';
 import { useStore, useUI, Avatar, CountBadge, Icon, ServerIcon } from './ui';
@@ -82,7 +82,7 @@ export default function Layout({ view, children }) {
           ))}
         </nav>
 
-        <div className="flex min-h-[10rem] shrink-0 flex-col gap-3">
+        <div className="flex min-h-[10rem] flex-1 flex-col gap-3">
           <p className="px-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">Mes espaces</p>
           <div className="flex shrink-0 flex-col gap-2">
             <button onClick={() => { setDrawer(false); openModal('join'); }} className="btn-ghost !py-2.5">
@@ -104,6 +104,11 @@ export default function Layout({ view, children }) {
               >
                 <ServerIcon server={srv} className="h-11 w-11 shrink-0" />
                 <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-slate-900">{srv.name}</span>
+                {myVoice(s)?.serverId === srv.id && (
+                  <span title="Vous êtes en vocal ici" className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
+                    <Icon name={myVoice(s).muted ? 'micOff' : 'mic'} className="h-3.5 w-3.5" />
+                  </span>
+                )}
                 <span className="ml-auto"><CountBadge n={serverUnread(s, srv.id)} /></span>
               </button>
             ))}

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { userFromToken } from './auth.js';
 import { buildSnapshot } from './sync.js';
 import { HttpError, login, logout, register, runAction } from './actions.js';
+import { publicUser } from './sync.js';
 import { db } from './db.js';
 import { getVersion, bumpVersion } from './version.js';
 import { ensureAdmin } from './seed.js';
@@ -93,6 +94,17 @@ async function handleApi(req, res, path) {
     const body = await readJson(req);
     setOffline(String(body.token ?? ''));
     return send(res, 200, { ok: true });
+  }
+  // Recherche d'un membre (pseudo et tag) : sur tous les comptes, pas seulement ceux déjà connus.
+  if (req.method === 'GET' && path === '/api/users/search') {
+    const me = requireUser(req);
+    const raw = String(new URL(req.url, 'http://x').searchParams.get('q') ?? '').trim().slice(0, 40);
+    const [namePart = '', tagPart = ''] = raw.split('#').map((x) => x.trim().replace(/[%_]/g, ''));
+    if (namePart.length < 2) return send(res, 200, { users: [] });
+    const rows = db
+      .prepare('SELECT * FROM users WHERE id <> ? AND pseudo LIKE ? AND tag LIKE ? ORDER BY pseudo LIMIT 12')
+      .all(me.id, `%${namePart}%`, `%${tagPart}%`);
+    return send(res, 200, { users: rows.map(publicUser) });
   }
   if (req.method === 'GET' && path === '/api/sync') {
     const me = requireUser(req);

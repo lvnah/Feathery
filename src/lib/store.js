@@ -5,6 +5,7 @@ import { api, getToken, setToken } from './api';
 let state = null;
 let lastJson = null;
 let version = 0; // dernière version reçue du serveur : rien n'est re-téléchargé si elle n'a pas changé
+let actionGen = 0; // incrémenté à chaque action (locale ou serveur) : invalide les synchronisations en cours
 const listeners = new Set();
 
 export function getState() {
@@ -29,8 +30,10 @@ export async function refresh() {
     if (state) emit(null, null);
     return;
   }
+  const gen = actionGen; // une réponse qui part avant une action ne doit pas écraser l'état de cette action
   try {
     const snap = await api(`/api/sync?v=${version}`);
+    if (gen !== actionGen) return;
     if (snap.unchanged) return;
     version = snap.v;
     emit({ ...snap, session: { user_id: snap.me.id } }, null);
@@ -49,16 +52,28 @@ async function act(name, payload = {}) {
   try {
     res = await api(`/api/actions/${name}`, { method: 'POST', body: payload });
   } catch (err) {
+    actionGen++;
     refresh(); // en cas d'échec, on remet l'état réel à jour (annule les mises à jour optimistes)
     throw err;
   }
+  actionGen++;
   refresh();
   return res.result;
 }
 // Mise à jour locale immédiate (optimiste) ; la prochaine synchronisation la remplace par l'état serveur.
 const patchLocal = (fn) => {
+  actionGen++;
   if (state) emit(fn(state), null);
 };
+// Espace vocal du membre connecté : { serverId, channelName, muted } ou null.
+export const myVoice = (s) => {
+  const me = s && getMe(s);
+  const v = me && s.voice.find((x) => x.user_id === me.id);
+  if (!v) return null;
+  const c = s.channels.find((x) => x.id === v.channel_id);
+  return c ? { serverId: c.server_id, channelName: c.name, muted: !!v.muted } : null;
+};
+export const searchUsers = (q) => api(`/api/users/search?q=${encodeURIComponent(q)}`).then((r) => r.users);
 
 // ---------- Authentification ----------
 

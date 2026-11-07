@@ -103,7 +103,8 @@ export default function App() {
 
   // Fermer ou quitter la page : passer hors ligne tout de suite.
   useEffect(() => {
-    const leave = () => {
+    const leave = (e) => {
+      if (e && e.persisted) return; // page mise en cache (onglet réduit, navigation) : on reste connecté
       const token = getToken();
       if (!token || !navigator.sendBeacon) return;
       navigator.sendBeacon('/api/presence/leave', new Blob([JSON.stringify({ token })], { type: 'application/json' }));

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { getMe, serversOf, friendsOf, membersOf } from '../lib/store';
+import { useEffect, useState } from 'react';
+import { getMe, serversOf, friendsOf, membersOf, myVoice, searchUsers } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, Icon, ServerIcon } from '../components/ui';
 import { serverUnread, leaveServer } from '../lib/store';
 import { run } from './ServerView';
@@ -92,10 +92,21 @@ export default function Home() {
   const onlineFriends = friends.filter(isOnline);
 
   const query = q.trim().toLowerCase();
+  // Recherche de membres côté serveur ; les anciens résultats restent affichés pendant la recherche (pas de clignotement).
+  const [remoteUsers, setRemoteUsers] = useState([]);
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) { setRemoteUsers([]); return undefined; }
+    let alive = true;
+    const id = setTimeout(() => {
+      searchUsers(term).then((list) => alive && setRemoteUsers(list)).catch(() => {});
+    }, 250);
+    return () => { alive = false; clearTimeout(id); };
+  }, [q]);
   const results = query
     ? {
         servers: servers.filter((x) => x.name.toLowerCase().includes(query)),
-        users: s.users.filter((u) => u.id !== me.id && fullName(u).toLowerCase().includes(query)),
+        users: remoteUsers.filter((u) => u.id !== me.id),
       }
     : null;
 
@@ -172,6 +183,7 @@ export default function Home() {
                     server={srv}
                     meta={`${membersOf(s, srv.id).length} membre(s) · ${srv.is_public ? 'Public' : 'Privé'}`}
                     unread={serverUnread(s, srv.id)}
+                    badge={myVoice(s)?.serverId === srv.id ? <span className="pill !bg-brand-500 !text-white">En vocal</span> : null}
                     onClick={() => go({ name: 'server', serverId: srv.id })}
                     onContextMenu={(e) => {
                       if (srv.owner_id === me.id) { e.preventDefault(); return; }

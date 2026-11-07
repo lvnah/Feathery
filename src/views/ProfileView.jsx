@@ -190,7 +190,7 @@ function PublicProfile({ user, goBack }) {
       </div>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-8">
         <div className="overflow-hidden rounded-[2rem] border border-slate-100 shadow-soft">
-          <Banner user={user} className="h-44" />
+          <Banner user={user} />
           <div className="flex flex-col gap-4 px-6 pb-6">
             <div className="flex flex-col items-start gap-3">
               <Avatar user={user} size="xl" showStatus className="-mt-12 ring-4 ring-surface" />

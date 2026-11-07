@@ -9,7 +9,7 @@ export default function SpaceCard({ server, meta, unread = 0, badge = null, acti
       onContextMenu={onContextMenu}
       className={`panel flex flex-col overflow-hidden p-0 text-left transition hover:ring-2 hover:ring-brand-200 ${active ? 'ring-2 ring-brand-300' : ''}`}
     >
-      <div className="relative h-24 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400">
+      <div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400">
         {server.banner && (
           <img src={server.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />
         )}
