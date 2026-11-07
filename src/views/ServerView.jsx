@@ -121,11 +121,14 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!current || !text.trim()) return;
+    // Le message part tout de suite : le champ est vidé avant la réponse du serveur.
+    const content = text;
+    setText('');
     setError('');
     try {
-      await sendMessage(current.id, text);
-      setText('');
+      await sendMessage(current.id, content);
     } catch (err) {
+      setText(content);
       setError(err.message);
     }
   };

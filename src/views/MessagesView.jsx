@@ -51,10 +51,12 @@ export default function MessagesView({ withId }) {
     e.preventDefault();
     if (!partner || !text.trim()) return;
     setError('');
+    const content = text;
+    setText('');
     try {
-      await sendDM(partner.id, text);
-      setText('');
+      await sendDM(partner.id, content);
     } catch (err) {
+      setText(content);
       setError(err.message);
     }
   };

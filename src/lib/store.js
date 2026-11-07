@@ -42,11 +42,23 @@ export async function refresh() {
   }
 }
 
+// Action serveur. La réponse n'attend pas la resynchronisation : l'interface se met à jour
+// dès que le serveur a répondu, et la synchronisation se fait en arrière-plan.
 async function act(name, payload = {}) {
-  const res = await api(`/api/actions/${name}`, { method: 'POST', body: payload });
-  await refresh();
+  let res;
+  try {
+    res = await api(`/api/actions/${name}`, { method: 'POST', body: payload });
+  } catch (err) {
+    refresh(); // en cas d'échec, on remet l'état réel à jour (annule les mises à jour optimistes)
+    throw err;
+  }
+  refresh();
   return res.result;
 }
+// Mise à jour locale immédiate (optimiste) ; la prochaine synchronisation la remplace par l'état serveur.
+const patchLocal = (fn) => {
+  if (state) emit(fn(state), null);
+};
 
 // ---------- Authentification ----------
 
@@ -154,16 +166,41 @@ export const messagesBadge = (s) => {
 };
 export const createServer = (payload) => act('createServer', payload);
 export const setStatus = (status) => act('setStatus', { status });
-export const setVoiceMutedRemote = (muted) => act('setVoiceMuted', { muted });
+export const setVoiceMutedRemote = (muted) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: s.voice.map((v) => (v.user_id === me.id ? { ...v, muted } : v)) }));
+  return act('setVoiceMuted', { muted });
+};
 export const leaveServer = (serverId) => act('leaveServer', { serverId });
 export const joinPublicServer = (serverId) => act('joinPublicServer', { serverId });
 export const joinServer = (code) => act('joinServer', { code });
 export const regenerateInvite = (serverId) => act('regenerateInvite', { serverId });
 export const createChannel = (serverId, name, type) => act('createChannel', { serverId, name, type });
 export const deleteChannel = (channelId) => act('deleteChannel', { channelId });
-export const sendMessage = (channelId, content) => act('sendMessage', { channelId, content });
-export const joinVoice = (channelId) => act('joinVoice', { channelId });
-export const leaveVoice = () => act('leaveVoice');
+export const sendMessage = (channelId, content) => {
+  const me = state && getMe(state);
+  const tmpId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  if (me) {
+    patchLocal((s) => ({
+      ...s,
+      messages: [...s.messages, { id: tmpId, channel_id: channelId, user_id: me.id, content, created_at: Date.now(), pending: true }],
+    }));
+  }
+  return act('sendMessage', { channelId, content }).catch((err) => {
+    patchLocal((s) => ({ ...s, messages: s.messages.filter((m) => m.id !== tmpId) }));
+    throw err;
+  });
+};
+export const joinVoice = (channelId) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: [...s.voice.filter((v) => v.user_id !== me.id), { user_id: me.id, channel_id: channelId, muted: false }] }));
+  return act('joinVoice', { channelId });
+};
+export const leaveVoice = () => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => v.user_id !== me.id) }));
+  return act('leaveVoice');
+};
 export const createRole = (serverId, role) => act('createRole', { serverId, ...role });
 export const kickMember = (serverId, userId) => act('kickMember', { serverId, userId });
 export const reportUser = (targetId, reason, serverId = null) => act('reportUser', { targetId, reason, serverId });

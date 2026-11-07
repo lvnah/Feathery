@@ -6,7 +6,7 @@ import { api } from './api';
 const RTC_CONFIG = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
 };
-const SIGNAL_INTERVAL_MS = 1000;
+const SIGNAL_INTERVAL_MS = 500;
 
 let session = null; // { channelId, myId, stream, peers: Map<userId, {pc, audio}>, timer }
 let starting = null; // démarrage du micro en cours (évite les doubles appels)

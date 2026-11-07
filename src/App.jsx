@@ -59,6 +59,8 @@ export default function App() {
   // Thème clair / sombre choisi dans Paramètres.
   const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
+  // Vocal : recalculé à chaque changement de l'état (clic optimiste, réponse serveur ou synchronisation).
+  useEffect(() => { reconcileVoice(); }, [s]);
   const [view, setView] = useState(() => viewFromPath(window.location.pathname));
   const [modal, setModal] = useState(null);
   const [menu, setMenu] = useState(null);
@@ -77,12 +79,9 @@ export default function App() {
   // Le vocal est réconcilié à chaque cycle (connexions vers les membres du salon).
   useEffect(() => {
     let alive = true;
-    const tick = () =>
-      refresh()
-        .then(() => reconcileVoice())
-        .finally(() => alive && setBooting(false));
+    const tick = () => refresh().finally(() => alive && setBooting(false));
     tick();
-    const id = setInterval(tick, 3000);
+    const id = setInterval(tick, 1500);
     setVoiceErrorHandler((msg) => {
       toast(msg);
       leaveVoice().catch(() => {});
