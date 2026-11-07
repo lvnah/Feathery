@@ -30,6 +30,17 @@ async function send(toId, kind, payload) {
   }
 }
 
+// Contexte audio débloqué par un geste de l'utilisateur (clic ou toucher) : Safari iOS exige ce geste.
+let audioCtx = null;
+export function unlockAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state !== 'running') audioCtx.resume();
+  } catch {
+    /* navigateur sans Web Audio */
+  }
+}
+
 // Les navigateurs mobiles refusent de lancer un son sans geste : on réessaie au prochain toucher.
 const pendingAudio = new Set();
 function playRemote(el) {
@@ -38,11 +49,21 @@ function playRemote(el) {
 }
 ['click', 'touchend', 'keydown'].forEach((evt) =>
   document.addEventListener(evt, () => {
+    unlockAudio();
     for (const el of [...pendingAudio]) playRemote(el);
   }, true),
 );
 
 function attachRemoteAudio(peerId, stream) {
+  const entry = session.peers.get(peerId);
+  if (audioCtx && audioCtx.state === 'running') {
+    // Voie débloquée : le son distant passe par le contexte audio (fiable sur iPhone).
+    entry.source?.disconnect();
+    entry.source = audioCtx.createMediaStreamSource(stream);
+    entry.source.connect(audioCtx.destination);
+    entry.audio?.remove();
+    return null;
+  }
   let audio = session.peers.get(peerId)?.audio;
   if (!audio) {
     audio = document.createElement('audio');
@@ -84,6 +105,7 @@ function closePeer(peerId) {
   entry.pc.close();
   entry.audio?.remove();
   if (entry.audio) pendingAudio.delete(entry.audio);
+  entry.source?.disconnect();
   session.peers.delete(peerId);
 }
 

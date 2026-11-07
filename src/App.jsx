@@ -5,6 +5,8 @@ import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/
 import { playJoin, playLeave } from './lib/sounds';
 import { startPresence, stopPresence } from './lib/presence';
 import { startEvents, stopEvents } from './lib/events';
+import { completeSpotifyLogin, startSpotifyPlayer } from './lib/spotify';
+import SpotifyPlayer from './components/SpotifyPlayer';
 import { getToken } from './lib/api';
 import { ContextMenu, UIContext, useStore } from './components/ui';
 import Layout from './components/Layout';
@@ -61,6 +63,16 @@ export default function App() {
   // Thème clair / sombre choisi dans Paramètres.
   const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
+  // Retour de la connexion Spotify (URL /spotify-callback?code=…).
+  useEffect(() => {
+    if (window.location.pathname !== '/spotify-callback') return;
+    const code = new URLSearchParams(window.location.search).get('code');
+    window.history.replaceState(null, '', '/');
+    if (!code) return;
+    completeSpotifyLogin(code)
+      .then(() => { toast('Spotify connecté'); startSpotifyPlayer(); })
+      .catch((err) => toast(err.message));
+  }, []);
   // Présence tant que la page est ouverte (indépendante de la taille de la fenêtre).
   const loggedIn = !!me;
   useEffect(() => {
@@ -115,17 +127,6 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // Fermer ou quitter la page : passer hors ligne tout de suite.
-  useEffect(() => {
-    const leave = (e) => {
-      if (e && e.persisted) return; // page mise en cache (onglet réduit, navigation) : on reste connecté
-      const token = getToken();
-      if (!token || !navigator.sendBeacon) return;
-      navigator.sendBeacon('/api/presence/leave', new Blob([JSON.stringify({ token })], { type: 'application/json' }));
-    };
-    window.addEventListener('pagehide', leave);
-    return () => window.removeEventListener('pagehide', leave);
-  }, []);
 
   // Clic droit : désactivé partout sauf sur les éléments qui ouvrent un menu de l'application.
   // Dans les champs de saisie, le menu natif (copier / coller) reste disponible.
@@ -212,6 +213,7 @@ export default function App() {
   return (
     <UIContext.Provider value={ui}>
       {content}
+      {me && <SpotifyPlayer />}
       {splash && <Splash onDone={endSplash} />}
       <ModalHost modal={modal} onClose={closeModal} />
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} />}

@@ -1,4 +1,5 @@
 import { getMe, logout, updateSettings } from '../lib/store';
+import { SPOTIFY_CONFIGURED, connectSpotify, disconnectSpotify, isSpotifyConnected, startSpotifyPlayer } from '../lib/spotify';
 import { useStore, useUI } from '../components/ui';
 import PageBanner from '../components/PageBanner';
 import { run } from './ServerView';
@@ -90,6 +91,22 @@ export default function SettingsView() {
             checked={st.acceptFriendRequests !== false}
             onChange={(v) => set({ acceptFriendRequests: v })}
           />
+        </Card>
+
+        <Card title="Spotify">
+          <p className="text-sm text-slate-600">
+            Connectez votre compte pour écouter votre musique dans un lecteur flottant intégré à l’appli. La lecture complète demande un compte Spotify Premium.
+          </p>
+          {!SPOTIFY_CONFIGURED ? (
+            <p className="text-xs font-semibold text-slate-500">Non configuré : l’identifiant de l’application Spotify (VITE_SPOTIFY_CLIENT_ID) doit être défini au moment de la compilation.</p>
+          ) : isSpotifyConnected() ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-bold text-brand-700">Compte Spotify connecté</span>
+              <button type="button" onClick={() => disconnectSpotify()} className="btn-ghost">Déconnecter Spotify</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => connectSpotify()} className="btn-primary self-start">Connecter mon compte Spotify</button>
+          )}
         </Card>
 
         <Card title="Compte">

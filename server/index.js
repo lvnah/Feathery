@@ -13,6 +13,10 @@ import { ensureAdmin } from './seed.js';
 import { getImage, migrateInlineImages } from './images.js';
 
 ensureAdmin();
+// Une place de vocal se libère quand le membre ne donne plus signe de vie (onglet fermé, téléphone en veille).
+setInterval(() => {
+  db.prepare('DELETE FROM voice_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(Date.now() - 60_000);
+}, 15_000).unref();
 const migrated = migrateInlineImages();
 if (migrated) console.log(`${migrated} image(s) déplacée(s) hors de la synchronisation.`);
 
@@ -88,6 +92,8 @@ async function handleApi(req, res, path) {
     return send(res, 200, result);
   }
   if (req.method === 'POST' && path === '/api/auth/logout') {
+    const leaving = userFromToken(bearer(req));
+    if (leaving) db.prepare('DELETE FROM voice_connections WHERE user_id = ?').run(leaving.id); // déconnexion = on quitte le vocal
     setOffline(bearer(req));
     logout(bearer(req));
     return send(res, 200, { ok: true });
