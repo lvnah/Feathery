@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { subscribe, getState } from '../lib/store';
-import { avatarGradient, bannerStyle, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
+import { avatarGradient, bannerLogoLayer, bannerStyle, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
 import Logo from './Logo';
 
 export const UIContext = createContext(null);
@@ -103,7 +103,12 @@ export function CountBadge({ n, className = '' }) {
 }
 
 export function Banner({ user, className = '' }) {
-  return <div className={`h-32 w-full ${className}`} style={bannerStyle(user)} />;
+  const layer = bannerLogoLayer(user);
+  return (
+    <div className={`relative h-32 w-full overflow-hidden ${className}`} style={bannerStyle(user)}>
+      {layer && <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={layer} />}
+    </div>
+  );
 }
 
 export function Modal({ open, title, onClose, children, width = 'max-w-md' }) {

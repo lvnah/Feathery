@@ -229,7 +229,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
       {/* Barre d'en-tête de l'espace */}
       {server.banner && (
         <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft max-lg:hidden">
-          <img src={server.banner} alt="" draggable={false} className="h-full w-full scale-105 object-cover object-center blur-[2px]" />
+          <img src={server.banner} alt="" draggable={false} className="h-full w-full object-cover object-center" />
         </div>
       )}
       <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">

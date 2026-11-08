@@ -267,6 +267,10 @@ export const adminDeleteUser = (userId) => act('adminDeleteUser', { userId });
 export const adminListServers = () => act('adminListServers');
 export const adminDeleteServer = (serverId) => act('adminDeleteServer', { serverId });
 export const adminListReports = () => act('adminListReports');
+export const adminStats = () => act('adminStats');
+export const adminSetAdmin = (userId, value) => act('adminSetAdmin', { userId, value });
+export const adminSetServerVisibility = (serverId, isPublic) => act('adminSetServerVisibility', { serverId, isPublic });
+export const setServerVisibility = (serverId, isPublic) => act('setServerVisibility', { serverId, isPublic });
 export const adminDismissReport = (reportId) => act('adminDismissReport', { reportId });
 
 export const setGames = (games) => act('setGames', { games });

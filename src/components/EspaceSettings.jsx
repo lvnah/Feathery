@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { deleteRole, deleteServer, getMe, kickMember, membersOf, membership, rolesOf, assignRole, updateInvite, updateRole, updateServerIcon, createRole } from '../lib/store';
 import { Avatar, ColorDiamonds, ErrorLine, Modal, ServerIcon, useStore, useUI } from './ui';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
-import { updateServerName, reorderRoles, setServerBanner } from '../lib/store';
+import { updateServerName, reorderRoles, setServerBanner, setServerVisibility } from '../lib/store';
 import { fullName } from '../lib/util';
 import { ROLE_COLORS } from '../lib/util';
 import { run } from '../views/ServerView';
@@ -338,6 +338,7 @@ function ManageTab({ serverId, toast, onDeleted }) {
         </div>
         <ErrorLine>{error}</ErrorLine>
       </form>
+      <VisibilityForm serverId={serverId} server={server} toast={toast} />
       <BannerForm serverId={serverId} server={server} toast={toast} />
 
       <div className="flex flex-col gap-3 rounded-3xl border border-red-100 bg-red-50/60 p-5">
@@ -413,6 +414,40 @@ function BannerForm({ serverId, server, toast }) {
         {me.is_plus ? 'Vous êtes PLUS : vous pouvez utiliser un GIF animé.' : 'Image fixe uniquement. Les bannières animées (GIF) sont réservées aux membres PLUS.'}
       </span>
       <ErrorLine>{error}</ErrorLine>
+    </div>
+  );
+}
+
+// Visibilité de l'espace : publique (visible dans la Communauté) ou privée (sur invitation seulement).
+function VisibilityForm({ serverId, server, toast }) {
+  const choose = (isPublic) => {
+    if (!!server.is_public === isPublic) return;
+    run(toast, () => setServerVisibility(serverId, isPublic), isPublic ? 'Espace public' : 'Espace privé');
+  };
+  const option = (value, label, hint) => (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={!!server.is_public === value}
+      onClick={() => choose(value)}
+      className={`flex min-h-[44px] flex-1 items-start gap-3 rounded-2xl border p-4 text-left transition ${!!server.is_public === value ? 'border-brand-400 bg-brand-50' : 'border-slate-200 bg-surface hover:border-brand-200'}`}
+    >
+      <span className={`mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${!!server.is_public === value ? 'border-brand-600' : 'border-slate-300'}`}>
+        {!!server.is_public === value && <span className="h-2 w-2 rounded-full bg-brand-600" />}
+      </span>
+      <span className="flex flex-col">
+        <span className="font-bold text-slate-900">{label}</span>
+        <span className="text-xs text-slate-500">{hint}</span>
+      </span>
+    </button>
+  );
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl bg-slate-50 p-5">
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Visibilité</p>
+      <div role="radiogroup" className="flex flex-col gap-3 md:flex-row">
+        {option(true, 'Publique', 'Visible dans la Communauté, chacun peut la rejoindre.')}
+        {option(false, 'Privée', 'Seuls les membres invités peuvent la rejoindre.')}
+      </div>
     </div>
   );
 }

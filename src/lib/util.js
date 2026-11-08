@@ -66,6 +66,28 @@ export const LOGO_CLASSIC = [
   { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
   { label: 'Prairie', css: 'linear-gradient(120deg,#14532d,#65a30d,#fef08a,#14532d)' },
 ];
+const presetBackground = (css, animated) => ({
+  backgroundImage: css,
+  backgroundSize: animated ? '300% 300%' : 'cover',
+  ...(animated ? { animation: 'banner-drift 14s ease-in-out infinite' } : {}),
+});
+// Calque du logo : même couleur que la bannière, plus claire pour rester visible.
+export function bannerLogoLayer(user) {
+  const b = user?.banner || {};
+  if (b.type === 'image' || b.type === 'url') return null;
+  const preset = b.type === 'preset' && PLUS_BANNER_PRESETS[b.key];
+  const css = preset ? preset.css : LOGO_CLASSIC[(b.index ?? 0) % LOGO_CLASSIC.length].css;
+  const animated = !!preset && !!(user?.is_plus || user?.is_admin);
+  const mask = `url("${LOGO_URL}")`;
+  return {
+    ...presetBackground(css, animated),
+    filter: 'brightness(1.9) saturate(1.2)',
+    WebkitMaskImage: mask, maskImage: mask,
+    WebkitMaskSize: 'auto 60%', maskSize: 'auto 60%',
+    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center', maskPosition: 'center',
+  };
+}
 export function logoBackground(css, animated) {
   return {
     backgroundImage: `url("${LOGO_URL}"), ${css}`,
@@ -80,10 +102,10 @@ export function bannerStyle(user) {
   const b = user?.banner || {};
   if (b.type === 'preset' && PLUS_BANNER_PRESETS[b.key]) {
     // Les versions animées sont réservées aux PLUS (et à l'administration).
-    return logoBackground(PLUS_BANNER_PRESETS[b.key].css, !!(user?.is_plus || user?.is_admin));
+    return presetBackground(PLUS_BANNER_PRESETS[b.key].css, !!(user?.is_plus || user?.is_admin));
   }
   if (b.type !== 'image' && b.type !== 'url') {
-    return logoBackground(LOGO_CLASSIC[(b.index ?? 0) % LOGO_CLASSIC.length].css, false);
+    return presetBackground(LOGO_CLASSIC[(b.index ?? 0) % LOGO_CLASSIC.length].css, false);
   }
   if ((b.type === 'image' || b.type === 'url') && b.value) {
     const safe = String(b.value).replace(/["\\()]/g, '');
