@@ -15,6 +15,11 @@
   button {
     @apply cursor-pointer;
   }
+  /* Les images ne peuvent pas être tirées hors de l'appli. */
+  img {
+    -webkit-user-drag: none;
+    user-drag: none;
+  }
 }
 
 @layer components {
