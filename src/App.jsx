@@ -62,6 +62,23 @@ export default function App() {
   // Thème clair / sombre choisi dans Paramètres.
   const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
+  // Pas de glisser-déposer dans l'appli : une image déposée dans le chat donnerait son lien.
+  // Seuls les champs d'import de fichier (input type="file") acceptent un dépôt.
+  useEffect(() => {
+    const block = (e) => {
+      if (e.target instanceof HTMLInputElement && e.target.type === 'file') return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const noImageDrag = (e) => { if (e.target instanceof HTMLImageElement) e.preventDefault(); };
+    // Phase de capture : on bloque avant que le champ de saisie n'insère le lien de l'image.
+    ['dragenter', 'dragover', 'drop'].forEach((ev) => window.addEventListener(ev, block, true));
+    window.addEventListener('dragstart', noImageDrag, true);
+    return () => {
+      ['dragenter', 'dragover', 'drop'].forEach((ev) => window.removeEventListener(ev, block, true));
+      window.removeEventListener('dragstart', noImageDrag, true);
+    };
+  }, []);
   // Retour sur l'onglet ou retour du réseau : on se resynchronise tout de suite.
   useEffect(() => {
     const resync = () => { if (!document.hidden) refresh(); };

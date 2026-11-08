@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createChannel, createServer, getMe, getUser, joinServer, regenerateInvite, reportUser, updateChannel, setChannelReadonly, setGames } from '../lib/store';
-import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, useStore, useUI } from './ui';
-import { fullName, isOnline, statusLabel, statusColor } from '../lib/util';
+import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
+import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor } from '../lib/util';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
 import PlusBadge, { RoleBadge } from './PlusBadge';
 import Flag from './Flag';
@@ -90,8 +90,13 @@ function CreateServerModal({ onClose }) {
             placeholder={me.is_plus ? 'Vide = code automatique' : 'Réservé aux membres PLUS'} onChange={(e) => setCode(e.target.value)} />
         </label>
         <label className="flex flex-col gap-2"><Label>Bannière (facultatif)</Label>
-          <div className="relative h-24 overflow-hidden rounded-2xl bg-slate-200 bg-cover bg-center" style={{ backgroundImage: banner ? `url("${banner}")` : undefined }}>
-            {!banner && <span className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">Aucune bannière</span>}
+          {banner ? <SpaceBanner value={banner} className="h-24 rounded-2xl" /> : <div className="flex h-24 items-center justify-center rounded-2xl bg-slate-200 text-sm text-slate-500">Aucune bannière</div>}
+          <div className="flex flex-wrap gap-2">
+            {LOGO_CLASSIC.map((theme, index) => (
+              <button key={theme.label} type="button" title={theme.label} aria-label={`Bannière de base ${theme.label}`} onClick={() => setBanner(`preset:g${index}`)} className={`relative h-12 w-24 overflow-hidden rounded-xl border-2 ${banner === `preset:g${index}` ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`} style={bannerStyle({ banner: { type: 'gradient', index } })}>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={bannerLogoLayer({ banner: { type: 'gradient', index } })} />
+              </button>
+            ))}
           </div>
           <span className="btn-ghost cursor-pointer self-start">
     Importer une bannière

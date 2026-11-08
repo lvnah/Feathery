@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { deleteRole, deleteServer, getMe, kickMember, membersOf, membership, rolesOf, assignRole, updateInvite, updateRole, updateServerIcon, createRole } from '../lib/store';
 import { Avatar, ColorDiamonds, ErrorLine, Modal, ServerIcon, useStore, useUI } from './ui';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
+import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle } from '../lib/util';
 import { updateServerName, reorderRoles, setServerBanner, setServerVisibility } from '../lib/store';
 import { fullName } from '../lib/util';
 import { ROLE_COLORS } from '../lib/util';
@@ -409,6 +410,14 @@ function BannerForm({ serverId, server, toast }) {
             Retirer
           </button>
         )}
+      </div>
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Bannières de base</p>
+      <div className="flex flex-wrap gap-2">
+        {LOGO_CLASSIC.map((theme, index) => (
+          <button key={theme.label} type="button" title={theme.label} aria-label={`Bannière de base ${theme.label}`} onClick={() => run(toast, () => setServerBanner(serverId, `preset:g${index}`), 'Bannière mise à jour')} className="relative h-12 w-24 overflow-hidden rounded-xl border-2 border-line" style={bannerStyle({ banner: { type: 'gradient', index } })}>
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={bannerLogoLayer({ banner: { type: 'gradient', index } })} />
+          </button>
+        ))}
       </div>
       <span className="text-xs text-slate-500">
         {me.is_plus ? 'Vous êtes PLUS : vous pouvez utiliser un GIF animé.' : 'Image fixe uniquement. Les bannières animées (GIF) sont réservées aux membres PLUS.'}

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { subscribe, getState } from '../lib/store';
-import { avatarGradient, bannerLogoLayer, bannerStyle, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
+import { avatarGradient, bannerLogoLayer, bannerStyle, espaceBannerUser, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
 import Logo from './Logo';
 
 export const UIContext = createContext(null);
@@ -99,6 +99,25 @@ export function CountBadge({ n, className = '' }) {
     <span className={`inline-flex min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-white ${className}`}>
       {n > 9 ? '9+' : n}
     </span>
+  );
+}
+
+// Bannière d'un espace : image, ou bannière de base (même rendu que les profils).
+export function SpaceBanner({ value, className = '', imgClass = '' }) {
+  const user = espaceBannerUser(value);
+  if (user) {
+    const layer = bannerLogoLayer(user);
+    return (
+      <div className={`relative overflow-hidden ${className}`} style={bannerStyle(user)}>
+        {layer && <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={layer} />}
+      </div>
+    );
+  }
+  if (!value) return null;
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <img src={value} alt="" draggable={false} className={`h-full w-full object-cover object-center ${imgClass}`} />
+    </div>
   );
 }
 
