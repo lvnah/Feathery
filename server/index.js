@@ -114,6 +114,17 @@ async function handleApi(req, res, path) {
     setOffline(String(body.token ?? ''));
     return send(res, 200, { ok: true });
   }
+  // Aperçu d'un lien d'invitation (sans connexion) : nom, bannière, propriétaire, nombre de membres.
+  const inviteMatch = path.match(/^\/api\/invite\/([A-Za-z0-9]+)$/);
+  if (req.method === 'GET' && inviteMatch) {
+    const srv = db
+      .prepare(`SELECT s.id, s.name, s.icon, s.banner, s.created_at, u.pseudo AS owner_pseudo, u.tag AS owner_tag,
+        (SELECT COUNT(*) FROM memberships m WHERE m.server_id = s.id) AS members
+        FROM servers s JOIN users u ON u.id = s.owner_id WHERE s.invite_code = ?`)
+      .get(inviteMatch[1].toUpperCase());
+    if (!srv) return send(res, 404, { error: 'Lien d’invitation invalide ou expiré.' });
+    return send(res, 200, { server: srv });
+  }
   // Images servies par URL : le navigateur les garde en cache.
   const imgMatch = path.match(/^\/api\/img\/([a-f0-9]+)$/);
   if (req.method === 'GET' && imgMatch) {

@@ -86,6 +86,15 @@ export default function ServerView({ serverId, channelId, goHome }) {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages.length, current?.id]);
 
+  // Rejoindre un vocal ouvre directement la vue « En vocal » (téléphone).
+  // Calculé avant tout retour anticipé : l'ordre des hooks doit rester identique à chaque rendu.
+  const voiceId = channels.find((c) => c.id === s.voice.find((v) => v.user_id === me.id)?.channel_id)?.id ?? null;
+  const prevVoiceId = useRef(null);
+  useEffect(() => {
+    if (voiceId && voiceId !== prevVoiceId.current) setVoiceOpen(true);
+    prevVoiceId.current = voiceId;
+  }, [voiceId]);
+
   if (!allowed) {
     return (
       <div className="panel flex flex-1">
@@ -100,13 +109,6 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const canManage = canManageChannels(s, serverId, me.id);
   const myVoice = s.voice.find((v) => v.user_id === me.id);
   const myVoiceChannel = channels.find((c) => c.id === myVoice?.channel_id);
-  // Rejoindre un vocal ouvre directement la vue « En vocal » (téléphone).
-  const voiceId = myVoiceChannel?.id ?? null;
-  const prevVoiceId = useRef(null);
-  useEffect(() => {
-    if (voiceId && voiceId !== prevVoiceId.current) setVoiceOpen(true);
-    prevVoiceId.current = voiceId;
-  }, [voiceId]);
   const members = membersOf(s, serverId).sort(
     (a, b) => roleRank(s, serverId, a.id) - roleRank(s, serverId, b.id) || a.pseudo.localeCompare(b.pseudo),
   );
