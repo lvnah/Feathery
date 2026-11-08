@@ -12,7 +12,7 @@ export const ROLE_COLORS = [
 
 // Bannières par défaut (index 0 = vert de la page Paramètres).
 export const BANNER_GRADIENTS = [
-  'linear-gradient(120deg,#007454 0%,#00412f 45%,#002f22 100%)',
+  'linear-gradient(120deg,#2a2a30 0%,#18181b 45%,#0f0f12 100%)',
   'linear-gradient(135deg,#bae6fd 0%,#c7d2fe 100%)',
   'linear-gradient(135deg,#6366f1 0%,#a855f7 100%)',
   'linear-gradient(135deg,#f97316 0%,#ec4899 100%)',
@@ -39,7 +39,7 @@ export const STATUS_LABEL = { online: 'En ligne', game: 'En game', away: 'Absent
 export const STATUS_DOT = { online: 'bg-brand-500', game: 'bg-violet-500', away: 'bg-amber-400', offline: 'bg-slate-300' };
 export const statusLabel = (user) => STATUS_LABEL[statusKey(user)];
 // Couleur du texte de statut (lisible sur fond sombre).
-export const STATUS_TEXT = { online: '#00875f', game: '#7c3aed', away: '#b45309', offline: '#64748b' };
+export const STATUS_TEXT = { online: '#e4e4e7', game: '#7c3aed', away: '#b45309', offline: '#64748b' };
 export const statusColor = (user) => STATUS_TEXT[statusKey(user)];
 
 export function fullName(user) {
@@ -48,23 +48,23 @@ export function fullName(user) {
 
 // Bannières préréglées réservées aux membres PLUS : dégradés animés, créés pour Feathery.
 export const PLUS_BANNER_PRESETS = {
-  aurora: { label: 'Aurore', css: 'linear-gradient(120deg,#052e16,#0e7490,#7c3aed,#052e16)' },
+  aurora: { label: 'Aurore', css: 'linear-gradient(120deg,#0f0f12,#0e7490,#7c3aed,#0f0f12)' },
   ember: { label: 'Braise', css: 'linear-gradient(120deg,#7c2d12,#f97316,#fde68a,#7c2d12)' },
   tide: { label: 'Marée', css: 'linear-gradient(120deg,#0c4a6e,#38bdf8,#e0f2fe,#0c4a6e)' },
   nocturne: { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
-  meadow: { label: 'Prairie', css: 'linear-gradient(120deg,#14532d,#65a30d,#fef08a,#14532d)' },
+  meadow: { label: 'Prairie', css: 'linear-gradient(120deg,#1f1f23,#65a30d,#fef08a,#1f1f23)' },
   // Réservée aux administrateurs : dégradé animé avec le logo de l'application.
-  feathery: { label: 'Feathery (admin)', admin: true, logo: true, css: 'linear-gradient(120deg,#022c22,#047857,#34d399,#022c22)' },
+  feathery: { label: 'Feathery (admin)', admin: true, logo: true, css: 'linear-gradient(120deg,#0f0f12,#047857,#34d399,#0f0f12)' },
 };
 
 // Bannières « logo » : dégradés avec le logo de l'appli. Classiques (fixes) pour tous, animées pour les PLUS.
 export const LOGO_CLASSIC = [
-  { label: 'Émeraude', css: 'linear-gradient(120deg,#022c22,#007454,#00412f)' },
-  { label: 'Aurore', css: 'linear-gradient(120deg,#052e16,#0e7490,#7c3aed,#052e16)' },
+  { label: 'Émeraude', css: 'linear-gradient(120deg,#0f0f12,#2a2a30,#18181b)' },
+  { label: 'Aurore', css: 'linear-gradient(120deg,#0f0f12,#0e7490,#7c3aed,#0f0f12)' },
   { label: 'Braise', css: 'linear-gradient(120deg,#7c2d12,#f97316,#fde68a,#7c2d12)' },
   { label: 'Marée', css: 'linear-gradient(120deg,#0c4a6e,#38bdf8,#e0f2fe,#0c4a6e)' },
   { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
-  { label: 'Prairie', css: 'linear-gradient(120deg,#14532d,#65a30d,#fef08a,#14532d)' },
+  { label: 'Prairie', css: 'linear-gradient(120deg,#1f1f23,#65a30d,#fef08a,#1f1f23)' },
 ];
 const presetBackground = (css, animated) => ({
   backgroundImage: css,
@@ -116,7 +116,7 @@ export function bannerStyle(user) {
 
 // Dégradés saturés pour les avatars sans photo (la lettre doit rester lisible en blanc).
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg,#007454,#00412f)',
+  'linear-gradient(135deg,#2a2a30,#18181b)',
   'linear-gradient(135deg,#6366f1,#a855f7)',
   'linear-gradient(135deg,#0ea5e9,#2563eb)',
   'linear-gradient(135deg,#f97316,#ec4899)',
@@ -142,8 +142,8 @@ export function formatStamp(ts) {
 }
 
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS (même liste que le serveur).
-export const NAME_COLORS_BASIC = ['#111827', '#0d9488', '#2563eb', '#16a34a', '#9333ea', '#ea580c'];
-export const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#4338ca', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet'];
+export const NAME_COLORS_BASIC = ['#111827', '#64748b', '#2563eb', '#d97706', '#9333ea', '#ea580c'];
+export const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#ca8a04', '#b45309', '#6d28d9', '#7c3aed', '#4338ca', '#1d4ed8', '#0369a1', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet'];
 
 // Couleurs « arc-en-ciel » prêtes à l'emploi pour les membres PLUS (dégradé animé sur le pseudo).
 const RAINBOW_COLS = {

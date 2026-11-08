@@ -7,8 +7,8 @@ export default function Logo({ className = 'h-7 w-7', animated = false }) {
   if (broken) {
     return (
       <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
-        <path d="M6 24C6 12 14 6 27 5c0 13-6 21-18 21-1 0-2 0-3-2z" fill="#007454" />
-        <path d="M6 26 17 14" stroke="#00412f" strokeWidth="2" strokeLinecap="round" />
+        <path d="M6 24C6 12 14 6 27 5c0 13-6 21-18 21-1 0-2 0-3-2z" fill="#e4e4e7" />
+        <path d="M6 26 17 14" stroke="#71717a" strokeWidth="2" strokeLinecap="round" />
       </svg>
     );
   }

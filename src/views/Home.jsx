@@ -20,13 +20,16 @@ const PARTICLES = [
 ];
 
 function HeroBanner({ onJoin }) {
+  // L'animation d'arrivée ne se joue qu'une fois par session : les retours sur l'accueil sont immédiats.
+  const [played] = useState(() => { try { return sessionStorage.getItem('hevenly:hero') === '1'; } catch { return false; } });
+  useEffect(() => { try { sessionStorage.setItem('hevenly:hero', '1'); } catch { /* navigation privée */ } }, []);
   return (
-    <section className="hero relative isolate flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-900 via-brand-800 to-[#052e16] p-8 text-white shadow-panel md:min-h-[24rem] md:p-10">
+    <section className={`hero ${played ? 'hero-done' : ''} relative isolate flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-900 via-brand-800 to-[#0f0f12] p-8 text-white shadow-panel md:min-h-[24rem] md:p-10`}>
       {/* Lueur en dégradé radial (sans filtre flou : plus fluide à animer) */}
       <div
         aria-hidden="true"
         className="hero-aura pointer-events-none absolute inset-0 m-auto h-[120%] w-[120%] rounded-full"
-        style={{ background: 'radial-gradient(closest-side, rgba(52,211,153,0.28), rgba(52,211,153,0) 100%)' }}
+        style={{ background: 'radial-gradient(closest-side, rgba(255,255,255,0.10), rgba(255,255,255,0) 100%)' }}
       />
       <div className="hero-ring pointer-events-none absolute inset-0 m-auto h-72 w-72 rounded-full border border-white/10 md:h-96 md:w-96">
         <span className="hero-dot absolute -top-1 left-1/2 h-2 w-2 rounded-full bg-brand-300" />

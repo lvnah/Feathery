@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Splash from './components/Splash';
 import { getMe, getState, joinServer, leaveVoice, refresh, setVoiceMutedRemote } from './lib/store';
 import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/voice';
@@ -10,16 +10,16 @@ import { ContextMenu, UIContext, useStore } from './components/ui';
 import Layout from './components/Layout';
 import { ModalHost } from './components/Modals';
 import Login from './views/Login';
-const PlusView = lazy(() => import('./views/PlusView'));
-const SettingsView = lazy(() => import('./views/SettingsView'));
+import PlusView from './views/PlusView';
+import SettingsView from './views/SettingsView';
 import InviteModal from './components/InviteModal';
 import Home from './views/Home';
 import ServerView from './views/ServerView';
-const MessagesView = lazy(() => import('./views/MessagesView'));
-const FriendsView = lazy(() => import('./views/FriendsView'));
-const CommunityView = lazy(() => import('./views/CommunityView'));
+import MessagesView from './views/MessagesView';
+import FriendsView from './views/FriendsView';
+import CommunityView from './views/CommunityView';
 import ProfileView from './views/ProfileView';
-const AdminPanel = lazy(() => import('./views/AdminPanel'));
+import AdminPanel from './views/AdminPanel';
 
 // Routage par état. La vue « espace » s'affiche plein écran (sans sidebar), comme la capture.
 // Téléphone ou tablette (y compris iPad) : utilisé pour l'icône dans les mini-profils.
@@ -274,7 +274,7 @@ export default function App() {
 
   return (
     <UIContext.Provider value={ui}>
-      <Suspense fallback={null}>{content}</Suspense>
+      {content}
       {inviteCode && <InviteModal code={inviteCode} loggedIn={!!me} onDone={closeInvite} />}
       {splash && <Splash onDone={endSplash} />}
       <ModalHost modal={modal} onClose={closeModal} />
