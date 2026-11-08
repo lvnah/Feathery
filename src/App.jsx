@@ -12,6 +12,7 @@ import { ModalHost } from './components/Modals';
 import Login from './views/Login';
 import PlusView from './views/PlusView';
 import SettingsView from './views/SettingsView';
+import InviteModal from './components/InviteModal';
 import Home from './views/Home';
 import ServerView from './views/ServerView';
 import MessagesView from './views/MessagesView';
@@ -95,6 +96,21 @@ export default function App() {
     }
     return undefined;
   }, [loggedIn]);
+  // Lien d'invitation (/invite/CODE) : gardé jusqu'à la connexion, puis proposé dans une fenêtre.
+  const [inviteCode, setInviteCode] = useState(() => {
+    const m = window.location.pathname.match(/^\/invite\/([A-Za-z0-9]+)\/?$/);
+    if (m) {
+      const code = m[1].toUpperCase();
+      sessionStorage.setItem('hevenly:invite', code);
+      window.history.replaceState(null, '', '/');
+      return code;
+    }
+    return sessionStorage.getItem('hevenly:invite');
+  });
+  const closeInvite = useCallback(() => {
+    sessionStorage.removeItem('hevenly:invite');
+    setInviteCode(null);
+  }, []);
   // Vocal : recalculé à chaque changement de l'état (clic optimiste, réponse serveur ou synchronisation).
   useEffect(() => { reconcileVoice(); }, [s]);
   const [view, setView] = useState(() => viewFromPath(window.location.pathname));
@@ -223,6 +239,7 @@ export default function App() {
   return (
     <UIContext.Provider value={ui}>
       {content}
+      {me && inviteCode && <InviteModal code={inviteCode} onDone={closeInvite} />}
       {splash && <Splash onDone={endSplash} />}
       <ModalHost modal={modal} onClose={closeModal} />
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} />}
