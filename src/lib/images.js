@@ -29,7 +29,7 @@ export function fileToDataUrl(file, { maxWidth = 128, maxHeight = 128, square = 
       canvas.height = Math.max(1, Math.round(sh * scale));
       canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/webp', 0.85));
+      resolve(canvas.toDataURL('image/webp', 0.93));
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);

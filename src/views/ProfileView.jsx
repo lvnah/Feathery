@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, setStatus, updateProfile } from '../lib/store';
 import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '../components/ui';
-import { BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
+import { BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
 import { NAME_COLORS_BASIC, NAME_COLORS_PLUS } from '../lib/util';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
@@ -77,6 +77,7 @@ function OwnProfile() {
           <div className="relative h-40">
             {/* Cliquer sur la bannière ou la photo ouvre le choix du fichier */}
             <label className="group absolute inset-0 cursor-pointer" style={bannerStyle(preview)} title="Changer la bannière">
+                <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={bannerLogoLayer(preview)} />
               <span className="pointer-events-none absolute inset-0 hidden items-center justify-center border-2 border-dashed border-white/80 bg-black/30 group-hover:flex"><Icon name="camera" className="h-7 w-7 text-white" /></span>
               <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={pick(setBanner, BANNER_OPTS, true)} />
             </label>
@@ -145,9 +146,11 @@ function OwnProfile() {
                     title={theme.label}
                     aria-label={`Bannière ${theme.label}`}
                     onClick={() => setBanner({ type: 'gradient', index })}
-                    className={`h-12 w-24 rounded-xl border-2 ${banner.type !== 'image' && banner.type !== 'preset' && (banner.index ?? 0) === index ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
+                    className={`relative h-12 w-24 overflow-hidden rounded-xl border-2 ${banner.type !== 'image' && banner.type !== 'preset' && (banner.index ?? 0) === index ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
                     style={bannerStyle({ banner: { type: 'gradient', index } })}
-                  />
+                  >
+                    <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={bannerLogoLayer({ banner: { type: 'gradient', index } })} />
+                  </button>
                 ))}
               </div>
             </Field>
@@ -162,9 +165,11 @@ function OwnProfile() {
                       title={preset.label}
                       aria-label={`Bannière ${preset.label}`}
                       onClick={() => setBanner({ type: 'preset', key })}
-                      className={`h-12 w-24 rounded-xl border-2 ${banner.type === 'preset' && banner.key === key ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
+                      className={`relative h-12 w-24 overflow-hidden rounded-xl border-2 ${banner.type === 'preset' && banner.key === key ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
                       style={bannerStyle({ banner: { type: 'preset', key }, is_plus: true })}
-                    />
+                    >
+                      <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={bannerLogoLayer({ banner: { type: 'preset', key }, is_plus: true })} />
+                    </button>
                   ))}
                 </div>
               </Field>

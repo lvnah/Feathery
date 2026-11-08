@@ -73,7 +73,7 @@ const randomCode = () => {
 // Images envoyées depuis le navigateur (data URL redimensionnée côté client).
 // Limites de taille : ce sont des miniatures, elles sont renvoyées à chaque synchronisation.
 // Images fixes : tout le monde. GIF animés : PLUS seulement, et plus légers (poids limité).
-const IMAGE_LIMITS = { avatar: 60_000, banner: 160_000, icon: 60_000, espace: 700_000 };
+const IMAGE_LIMITS = { avatar: 60_000, banner: 160_000, icon: 60_000, espace: 1_600_000 };
 // GIF animés (PLUS) : limites en caractères de la data URL (≈ 9 Mo et 12 Mo de fichier).
 const GIF_LIMITS = { avatar: 12_000_000, banner: 17_000_000, espace: 17_000_000 };
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS.
@@ -652,7 +652,7 @@ const handlers = {
   // ----- Administration (réservée à is_admin = 1) -----
   adminListUsers(me) {
     requireAdmin(me);
-    return all('SELECT id, pseudo, tag, is_plus, is_admin, created_at, last_activity FROM users ORDER BY created_at DESC');
+    return all('SELECT id, pseudo, tag, email, is_plus, is_admin, created_at, last_activity, status FROM users ORDER BY created_at DESC');
   },
 
   // Retirer PLUS remet aussi la bannière de base (dégradé vert).
@@ -700,6 +700,40 @@ const handlers = {
        LEFT JOIN servers s ON s.id = r.server_id
        ORDER BY r.created_at DESC LIMIT 200`,
     );
+  },
+
+  adminStats(me) {
+    requireAdmin(me);
+    const count = (sql, ...args) => one(sql, ...args).n;
+    return {
+      users: count('SELECT COUNT(*) AS n FROM users'),
+      online: count("SELECT COUNT(*) AS n FROM users WHERE last_activity > ? AND status <> 'offline'", Date.now() - 60_000),
+      plus: count('SELECT COUNT(*) AS n FROM users WHERE is_plus = 1'),
+      admins: count('SELECT COUNT(*) AS n FROM users WHERE is_admin = 1'),
+      servers: count('SELECT COUNT(*) AS n FROM servers'),
+      publicServers: count('SELECT COUNT(*) AS n FROM servers WHERE is_public = 1'),
+      messages: count('SELECT COUNT(*) AS n FROM messages'),
+      privateMessages: count('SELECT COUNT(*) AS n FROM dms'),
+      reports: count('SELECT COUNT(*) AS n FROM reports'),
+      inVoice: count('SELECT COUNT(*) AS n FROM voice_connections'),
+    };
+  },
+
+  adminSetAdmin(me, p) {
+    requireAdmin(me);
+    if (p.userId === me.id && !p.value) fail('Vous ne pouvez pas retirer vos propres droits ici.');
+    run('UPDATE users SET is_admin = ? WHERE id = ?', p.value ? 1 : 0, String(p.userId ?? ''));
+  },
+
+  adminSetServerVisibility(me, p) {
+    requireAdmin(me);
+    run('UPDATE servers SET is_public = ? WHERE id = ?', p.isPublic ? 1 : 0, String(p.serverId ?? ''));
+  },
+
+  // Le propriétaire choisit si son espace est public (visible dans la Communauté) ou privé.
+  setServerVisibility(me, p) {
+    requireOwner(p.serverId, me);
+    run('UPDATE servers SET is_public = ? WHERE id = ?', p.isPublic ? 1 : 0, String(p.serverId ?? ''));
   },
 
   adminDismissReport(me, p) {

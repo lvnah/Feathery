@@ -19,7 +19,7 @@ import MessagesView from './views/MessagesView';
 import FriendsView from './views/FriendsView';
 import CommunityView from './views/CommunityView';
 import ProfileView from './views/ProfileView';
-import AdminView from './views/AdminView';
+import AdminPanel from './views/AdminPanel';
 
 // Routage par état. La vue « espace » s'affiche plein écran (sans sidebar), comme la capture.
 // Chemin d'URL -> vue. Seul /admin change de vue ; le reste est l'accueil (routage par état).
@@ -211,8 +211,9 @@ export default function App() {
     [view, closeModal, toast],
   );
 
+  // Sans session, on revient à l'accueil (connexion). Avec une session, on garde la page demandée (ex. /admin) pendant le chargement.
   useEffect(() => {
-    if (!me) setView({ name: 'home' });
+    if (!me && !getToken()) setView({ name: 'home' });
   }, [me]);
 
   let content;
@@ -220,6 +221,8 @@ export default function App() {
     content = <div className="flex min-h-dvh items-center justify-center text-sm text-slate-500">Chargement…</div>;
   } else if (!me) {
     content = <Login toast={toast} />;
+  } else if (view.name === 'admin') {
+    content = <AdminPanel onExit={goHome} />;
   } else {
     content = (
       <Layout view={view}>
@@ -230,7 +233,6 @@ export default function App() {
         {view.name === 'plus' && <PlusView />}
         {view.name === 'settings' && <SettingsView />}
         {view.name === 'community' && <CommunityView />}
-        {view.name === 'admin' && <AdminView />}
         {view.name === 'profile' && <ProfileView key={`${view.userId}-${!!view.edit}`} userId={view.userId} edit={!!view.edit} goBack={goHome} />}
       </Layout>
     );

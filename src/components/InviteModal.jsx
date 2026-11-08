@@ -36,7 +36,7 @@ export default function InviteModal({ code, onDone }) {
       ) : (
         <div className="-mx-6 -mt-6 flex flex-col">
           <div className="relative h-32 w-full overflow-hidden rounded-t-[2.5rem] bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400">
-            {info.banner && <img src={info.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full scale-105 object-cover object-center blur-[2px]" />}
+            {info.banner && <img src={info.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />}
           </div>
           <div className="flex flex-col gap-4 px-6 pb-6">
             <div className="relative z-10 -mt-10 flex items-end gap-4">
