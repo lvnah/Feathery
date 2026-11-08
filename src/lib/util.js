@@ -1,3 +1,4 @@
+import { LOGO_URL } from './brand';
 // Constantes et helpers purs partagés par l'interface.
 
 export const OWNER_COLOR = '#ef4444';
@@ -52,12 +53,24 @@ export const PLUS_BANNER_PRESETS = {
   tide: { label: 'Marée', css: 'linear-gradient(120deg,#0c4a6e,#38bdf8,#e0f2fe,#0c4a6e)' },
   nocturne: { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
   meadow: { label: 'Prairie', css: 'linear-gradient(120deg,#14532d,#65a30d,#fef08a,#14532d)' },
+  // Réservée aux administrateurs : dégradé animé avec le logo de l'application.
+  feathery: { label: 'Feathery (admin)', admin: true, logo: true, css: 'linear-gradient(120deg,#022c22,#047857,#34d399,#022c22)' },
 };
 
 export function bannerStyle(user) {
   const b = user?.banner || {};
   if (b.type === 'preset' && PLUS_BANNER_PRESETS[b.key]) {
-    return { backgroundImage: PLUS_BANNER_PRESETS[b.key].css, backgroundSize: '300% 300%', animation: 'banner-drift 14s ease-in-out infinite' };
+    const preset = PLUS_BANNER_PRESETS[b.key];
+    if (preset.logo) {
+      return {
+        backgroundImage: `url("${LOGO_URL}"), ${preset.css}`,
+        backgroundRepeat: 'no-repeat, repeat',
+        backgroundPosition: 'center, 0% 50%',
+        backgroundSize: 'auto 72%, 300% 300%',
+        animation: 'banner-drift-logo 12s ease-in-out infinite',
+      };
+    }
+    return { backgroundImage: preset.css, backgroundSize: '300% 300%', animation: 'banner-drift 14s ease-in-out infinite' };
   }
   if ((b.type === 'image' || b.type === 'url') && b.value) {
     const safe = String(b.value).replace(/["\\()]/g, '');
@@ -95,7 +108,7 @@ export function formatStamp(ts) {
 
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS (même liste que le serveur).
 export const NAME_COLORS_BASIC = ['#111827', '#dc2626', '#2563eb', '#16a34a', '#9333ea', '#ea580c'];
-export const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#be123c', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy'];
+export const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#be123c', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet'];
 
 // Couleurs « arc-en-ciel » prêtes à l'emploi pour les membres PLUS (dégradé animé sur le pseudo).
 const RAINBOW_COLS = {
@@ -104,8 +117,13 @@ const RAINBOW_COLS = {
   ocean: ['#0ea5e9', '#2563eb', '#22d3ee'],
   aurora: ['#10b981', '#3b82f6', '#a855f7'],
   candy: ['#f472b6', '#c084fc', '#60a5fa'],
+  neon: ['#22d3ee', '#a3e635', '#f0abfc'],
+  lagoon: ['#06b6d4', '#14b8a6', '#818cf8'],
+  ruby: ['#be123c', '#f43f5e', '#fb7185'],
+  lime: ['#84cc16', '#22c55e', '#eab308'],
+  violet: ['#7c3aed', '#c084fc', '#f0abfc'],
 };
-export const RAINBOW_LABELS = { rainbow: 'Arc-en-ciel', sunset: 'Coucher de soleil', ocean: 'Océan', aurora: 'Aurore', candy: 'Bonbon' };
+export const RAINBOW_LABELS = { rainbow: 'Arc-en-ciel', sunset: 'Coucher de soleil', ocean: 'Océan', aurora: 'Aurore', candy: 'Bonbon', neon: 'Néon', lagoon: 'Lagon', ruby: 'Rubis', lime: 'Citron vert', violet: 'Violet' };
 // Le dégradé est doublé et se termine par sa première couleur : l'animation boucle sans couture.
 const gradientOf = (cols) => {
   const seq = [...cols, cols[0]].join(', ');

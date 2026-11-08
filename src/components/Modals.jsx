@@ -93,7 +93,10 @@ function CreateServerModal({ onClose }) {
           <div className="relative h-24 overflow-hidden rounded-2xl bg-slate-200 bg-cover bg-center" style={{ backgroundImage: banner ? `url("${banner}")` : undefined }}>
             {!banner && <span className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">Aucune bannière</span>}
           </div>
-          <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="text-sm" onChange={pickBanner} />
+          <span className="btn-ghost cursor-pointer self-start">
+    Importer une bannière
+    <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={pickBanner} />
+  </span>
         </label>
         <ErrorLine>{error}</ErrorLine>
         <div className="mt-2 flex justify-end gap-2">
