@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, setStatus, updateProfile } from '../lib/store';
 import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '../components/ui';
-import { BANNER_GRADIENTS, PLUS_BANNER_PRESETS, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
+import { BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
 import { NAME_COLORS_BASIC, NAME_COLORS_PLUS } from '../lib/util';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
@@ -136,8 +136,24 @@ function OwnProfile() {
               <ImportButton onChange={pick(setAvatar, AVATAR_OPTS)} label={avatar ? 'Changer la photo' : 'Importer une photo'} />
             </Field>
 
+            <Field label="Bannières classiques" accent>
+              <div className="flex flex-wrap gap-2">
+                {LOGO_CLASSIC.map((theme, index) => (
+                  <button
+                    key={theme.label}
+                    type="button"
+                    title={theme.label}
+                    aria-label={`Bannière ${theme.label}`}
+                    onClick={() => setBanner({ type: 'gradient', index })}
+                    className={`h-12 w-24 rounded-xl border-2 ${banner.type !== 'image' && banner.type !== 'preset' && (banner.index ?? 0) === index ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
+                    style={bannerStyle({ banner: { type: 'gradient', index } })}
+                  />
+                ))}
+              </div>
+            </Field>
+
             {(me.is_plus || me.is_admin) && (
-              <Field label="Bannières PLUS" accent>
+              <Field label="Bannières animées PLUS" accent>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(PLUS_BANNER_PRESETS).filter(([, preset]) => !preset.admin || me.is_admin).map(([key, preset]) => (
                     <button
@@ -147,7 +163,7 @@ function OwnProfile() {
                       aria-label={`Bannière ${preset.label}`}
                       onClick={() => setBanner({ type: 'preset', key })}
                       className={`h-12 w-24 rounded-xl border-2 ${banner.type === 'preset' && banner.key === key ? 'border-brand-600 ring-2 ring-brand-300' : 'border-line'}`}
-                      style={{ background: preset.css, backgroundSize: '300% 300%' }}
+                      style={bannerStyle({ banner: { type: 'preset', key }, is_plus: true })}
                     />
                   ))}
                 </div>

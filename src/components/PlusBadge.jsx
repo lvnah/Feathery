@@ -36,8 +36,8 @@ export function RoleBadge({ user, className = '' }) {
   if (!user?.is_admin && !user?.is_plus) return null;
   return (
     <span className="inline-flex shrink-0 items-center gap-1">
-      {user.is_admin && <AdminBadge className={className} />}
-      {user.is_plus && <PlusBadge className={className} />}
+      {!!user.is_admin && <AdminBadge className={className} />}
+      {!!user.is_plus && <PlusBadge className={className} />}
     </span>
   );
 }

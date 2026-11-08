@@ -17,6 +17,7 @@ ensureAdmin();
 setInterval(() => {
   db.prepare('DELETE FROM voice_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(Date.now() - 60_000);
 }, 15_000).unref();
+db.prepare("UPDATE users SET name_color = '' WHERE is_admin = 0 AND name_color IN ('#dc2626', '#ef4444', '#be123c', 'rainbow-red')").run();
 const migrated = migrateInlineImages();
 if (migrated) console.log(`${migrated} image(s) déplacée(s) hors de la synchronisation.`);
 

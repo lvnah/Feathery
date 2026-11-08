@@ -3,6 +3,7 @@ import { acceptDM, deleteDM, hideConversation, friendsOf, friendshipBetween, get
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon } from '../components/ui';
 import { formatStamp, isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
 
@@ -13,6 +14,7 @@ export default function MessagesView({ withId }) {
   const me = getMe(s);
   const unread = unreadCount(s);
   const [text, setText] = useState('');
+  const [pending, setPending] = useState(null);
   const [error, setError] = useState('');
   const listRef = useRef(null);
 
@@ -96,7 +98,7 @@ export default function MessagesView({ withId }) {
               <CountBadge n={unread.dms[user.id] || 0} />
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); if (window.confirm(`Supprimer la conversation avec ${user.pseudo} ?`)) run(toast, () => hideConversation(user.id)); }}
+                onClick={(e) => { e.stopPropagation(); setPending({ title: `Supprimer la conversation avec ${user.pseudo} ?`, message: 'Elle disparaît de votre liste. Votre correspondant garde son historique.', label: 'Supprimer la conversation', action: () => hideConversation(user.id) }); }}
                 aria-label="Supprimer la conversation"
                 className="shrink-0 rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
               >
@@ -173,7 +175,7 @@ export default function MessagesView({ withId }) {
                     </div>
                     <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(d.created_at)}</span>
                     {d.from === me.id && (
-                      <button type="button" onClick={() => window.confirm('Supprimer ce message ?') && run(toast, () => deleteDM(d.id))} aria-label="Supprimer le message" className="shrink-0 rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600">
+                      <button type="button" onClick={() => setPending({ title: 'Supprimer ce message ?', message: 'Le message sera supprimé pour les deux personnes.', label: 'Supprimer le message', action: () => deleteDM(d.id) })} aria-label="Supprimer le message" className="shrink-0 rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600">
                         <Icon name="trash" className="h-4 w-4" />
                       </button>
                     )}
@@ -199,6 +201,7 @@ export default function MessagesView({ withId }) {
         )}
       </section>
     </div>
+    <ConfirmDialog pending={pending} onClose={() => setPending(null)} toast={toast} />
     </div>
   );
 }
