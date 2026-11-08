@@ -1,4 +1,5 @@
 import { CountBadge, ServerIcon } from './ui';
+import { bannerStyle } from '../lib/util';
 
 // Carte d'espace : bannière en haut, icône ronde avec un petit contour blanc qui la chevauche, puis le nom sous la bannière.
 export default function SpaceCard({ server, meta, unread = 0, badge = null, active = false, onClick, onContextMenu }) {
@@ -9,7 +10,7 @@ export default function SpaceCard({ server, meta, unread = 0, badge = null, acti
       onContextMenu={onContextMenu}
       className={`panel flex flex-col overflow-hidden p-0 text-left transition hover:ring-2 hover:ring-brand-200 ${active ? 'ring-2 ring-brand-300' : ''}`}
     >
-      <div className="relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400">
+      <div className="relative h-32 w-full shrink-0 overflow-hidden" style={bannerStyle({ banner: { type: 'gradient', index: 0 } })}>
         {server.banner && (
           <img src={server.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full scale-105 object-cover object-center blur-[2px]" />
         )}

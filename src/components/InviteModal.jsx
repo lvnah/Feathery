@@ -39,7 +39,7 @@ export default function InviteModal({ code, onDone }) {
             {info.banner && <img src={info.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full scale-105 object-cover object-center blur-[2px]" />}
           </div>
           <div className="flex flex-col gap-4 px-6 pb-6">
-            <div className="-mt-10 flex items-end gap-4">
+            <div className="relative z-10 -mt-10 flex items-end gap-4">
               <span className="rounded-full ring-4 ring-surface shadow-soft"><ServerIcon server={info} className="h-20 w-20" /></span>
             </div>
             <div>
