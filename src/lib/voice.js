@@ -54,17 +54,27 @@ function playRemote(el) {
   }, true),
 );
 
+// Préférences d'appareils (micro, haut-parleur), gardées sur cet appareil.
+const PREFS_KEY = 'hevenly:audio';
+export const getAudioPrefs = () => {
+  try {
+    return JSON.parse(localStorage.getItem(PREFS_KEY)) || {};
+  } catch {
+    return {};
+  }
+};
+// Le choix du haut-parleur n'existe que sur certains navigateurs (pas Safari iPhone).
+export const canChooseOutput = () => typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+
+function applyOutput(el) {
+  const { output } = getAudioPrefs();
+  if (output && el.setSinkId) el.setSinkId(output).catch(() => {});
+}
+
+// Le son distant passe par un lecteur audio (fonctionne partout) ; relancé au premier toucher si le navigateur le bloque.
 function attachRemoteAudio(peerId, stream) {
   const entry = session.peers.get(peerId);
-  if (audioCtx && audioCtx.state === 'running') {
-    // Voie débloquée : le son distant passe par le contexte audio (fiable sur iPhone).
-    entry.source?.disconnect();
-    entry.source = audioCtx.createMediaStreamSource(stream);
-    entry.source.connect(audioCtx.destination);
-    entry.audio?.remove();
-    return null;
-  }
-  let audio = session.peers.get(peerId)?.audio;
+  let audio = entry?.audio;
   if (!audio) {
     audio = document.createElement('audio');
     audio.autoplay = true;
@@ -73,6 +83,7 @@ function attachRemoteAudio(peerId, stream) {
     document.body.appendChild(audio);
   }
   audio.srcObject = stream;
+  applyOutput(audio);
   playRemote(audio);
   return audio;
 }
@@ -86,7 +97,9 @@ function createPeer(peerId, initiator) {
     if (e.candidate) send(peerId, 'ice', e.candidate.toJSON());
   };
   pc.ontrack = (e) => {
-    entry.audio = attachRemoteAudio(peerId, e.streams[0]);
+    // Certains navigateurs ne joignent pas de flux au son distant : on en crée un.
+    const stream = e.streams[0] ?? new MediaStream([e.track]);
+    entry.audio = attachRemoteAudio(peerId, stream);
   };
   pc.onconnectionstatechange = () => {
     if (pc.connectionState === 'failed') closePeer(peerId);
@@ -105,7 +118,6 @@ function closePeer(peerId) {
   entry.pc.close();
   entry.audio?.remove();
   if (entry.audio) pendingAudio.delete(entry.audio);
-  entry.source?.disconnect();
   session.peers.delete(peerId);
 }
 
@@ -142,7 +154,8 @@ async function pollSignals() {
 async function start(channelId, myId) {
   let stream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+    const { input } = getAudioPrefs();
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: input ? { ideal: input } : undefined, echoCancellation: true, noiseSuppression: true }, video: false });
   } catch (err) {
     onError(micErrorMessage(err));
     return false;
@@ -196,4 +209,38 @@ function micErrorMessage(err) {
     default:
       return `Accès au micro impossible (${err?.name || 'erreur inconnue'}).`;
   }
+}
+
+// Changer de micro pendant l'appel : on remplace la piste envoyée à chaque correspondant.
+async function switchInput(input) {
+  if (!session) return;
+  const fresh = await navigator.mediaDevices
+    .getUserMedia({ audio: { deviceId: input ? { ideal: input } : undefined, echoCancellation: true, noiseSuppression: true }, video: false })
+    .catch(() => null);
+  if (!fresh) return;
+  const track = fresh.getAudioTracks()[0];
+  track.enabled = !muted;
+  session.stream.getAudioTracks().forEach((t) => t.stop());
+  session.stream = new MediaStream([track]);
+  for (const entry of session.peers.values()) {
+    const sender = entry.pc.getSenders().find((x) => x.track?.kind === 'audio');
+    if (sender) await sender.replaceTrack(track).catch(() => {});
+  }
+}
+
+export function setAudioPrefs(patch) {
+  localStorage.setItem(PREFS_KEY, JSON.stringify({ ...getAudioPrefs(), ...patch }));
+  if ('output' in patch) document.querySelectorAll('audio[data-peer]').forEach(applyOutput);
+  if ('input' in patch) switchInput(patch.input);
+}
+
+// Liste des micros et haut-parleurs (les noms n'apparaissent qu'après l'autorisation du micro).
+export async function listAudioDevices() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+  stream?.getTracks().forEach((t) => t.stop());
+  const list = await navigator.mediaDevices.enumerateDevices();
+  return {
+    inputs: list.filter((d) => d.kind === 'audioinput'),
+    outputs: list.filter((d) => d.kind === 'audiooutput'),
+  };
 }
