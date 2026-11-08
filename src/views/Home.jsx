@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMe, serversOf, friendsOf, membersOf, myVoice, searchUsers } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, Icon, ServerIcon } from '../components/ui';
-import { serverUnread, leaveServer } from '../lib/store';
+import { serverUnread, leaveServer, logout } from '../lib/store';
 import { run } from './ServerView';
 import Logo from '../components/Logo';
 import SpaceCard from '../components/SpaceCard';
@@ -146,7 +146,17 @@ export default function Home() {
           <Icon name="users" className="h-4 w-4 text-brand-600" />
           Message
         </button>
-        <button onClick={() => go({ name: 'profile', userId: me.id })} className="hidden shrink-0 sm:block" aria-label="Mon profil">
+        <button
+          type="button"
+          onClick={(e) => openMenu(e, [
+            { label: 'Voir mon profil', onClick: () => go({ name: 'profile', userId: me.id }) },
+            { label: 'Modifier mon profil', onClick: () => go({ name: 'profile', userId: me.id, edit: true }) },
+            { separator: true },
+            { label: 'Se déconnecter', danger: true, onClick: () => logout() },
+          ])}
+          className="shrink-0"
+          aria-label="Menu du compte"
+        >
           <Avatar user={me} size="md" showStatus />
         </button>
       </div>

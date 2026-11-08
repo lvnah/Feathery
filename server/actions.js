@@ -101,6 +101,20 @@ db.exec(`CREATE TABLE IF NOT EXISTS dm_hidden (user_id TEXT NOT NULL, peer_id TE
 // Bannières préréglées, réservées aux membres PLUS (dégradés animés faits pour Feathery).
 const PLUS_PRESETS = ['aurora', 'ember', 'tide', 'nocturne', 'meadow'];
 
+// Bannière d'espace : image téléchargée, ou bannière de base 'preset:gN' (N de 0 à 5) pour tout le monde,
+// ou une bannière préréglée PLUS ('preset:aurora' …) ; 'preset:feathery' est réservée aux administrateurs.
+const ESPACE_PRESET = /^preset:(g[0-5]|aurora|ember|tide|nocturne|meadow|feathery)$/;
+const espaceBannerValue = (value, me) => {
+  const v = String(value ?? '').trim();
+  if (!v) return '';
+  const m = ESPACE_PRESET.exec(v);
+  if (!m) return imageData(v, 'espace', !!me.is_plus);
+  const key = m[1];
+  if (key === 'feathery' && !me.is_admin) fail('Cette bannière est réservée aux administrateurs.', 403);
+  if (key[0] !== 'g' && key !== 'feathery' && !me.is_plus && !me.is_admin) fail('Ces bannières sont réservées aux membres PLUS.', 403);
+  return v;
+};
+
 const handlers = {
   changePassword: (me, p) => changePassword(me, p),
   changeEmail: (me, p) => changeEmail(me, p),
@@ -322,7 +336,7 @@ const handlers = {
     return transaction(() => {
       run(
         'INSERT INTO servers (id, name, icon, is_public, owner_id, invite_code, created_at, banner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        id, name, icon, p.isPublic === false ? 0 : 1, me.id, code, now(), p.banner ? imageData(p.banner, 'espace', !!me.is_plus) : '',
+        id, name, icon, p.isPublic === false ? 0 : 1, me.id, code, now(), espaceBannerValue(p.banner, me),
       );
       run('INSERT INTO memberships (server_id, user_id, joined_at) VALUES (?, ?, ?)', id, me.id, now());
       run('INSERT INTO channels (id, server_id, name, type, created_at) VALUES (?, ?, ?, ?, ?)', newId('c'), id, 'général', 'text', now());
@@ -398,7 +412,7 @@ const handlers = {
   // Bannière de l'espace (propriétaire) : image fixe pour tous ; GIF animé réservé aux membres PLUS.
   setServerBanner(me, p) {
     requireOwner(p.serverId, me);
-    run('UPDATE servers SET banner = ? WHERE id = ?', imageData(p.value, 'espace', !!me.is_plus), p.serverId);
+    run('UPDATE servers SET banner = ? WHERE id = ?', espaceBannerValue(p.value, me), p.serverId);
   },
 
   // Autoriser ou non d'écrire dans un salon texte. Le propriétaire et les rôles qui gèrent les salons peuvent toujours écrire.
@@ -480,7 +494,7 @@ const handlers = {
   // Bannière de l'espace (propriétaire) : image fixe pour tous ; GIF animé réservé aux membres PLUS.
   setServerBanner(me, p) {
     requireOwner(p.serverId, me);
-    run('UPDATE servers SET banner = ? WHERE id = ?', imageData(p.value, 'espace', !!me.is_plus), p.serverId);
+    run('UPDATE servers SET banner = ? WHERE id = ?', espaceBannerValue(p.value, me), p.serverId);
   },
 
   // Autoriser ou non d'écrire dans un salon texte. Le propriétaire et les rôles qui gèrent les salons peuvent toujours écrire.

@@ -250,7 +250,12 @@ export const reorderRoles = (serverId, order) => act('reorderRoles', { serverId,
 export const updateChannel = (channelId, name) => act('updateChannel', { channelId, name });
 export const setChannelReadonly = (channelId, readonly) => act('setChannelReadonly', { channelId, readonly });
 export const setServerBanner = (serverId, value) => act('setServerBanner', { serverId, value });
-export const updateSettings = (patch) => act('updateSettings', patch);
+// Réglages : appliqués tout de suite côté interface, puis enregistrés sur le serveur.
+export const updateSettings = (patch) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, users: s.users.map((u) => (u.id === me.id ? { ...u, settings: { ...(u.settings || {}), ...patch } } : u)) }));
+  return act('updateSettings', patch);
+};
 export const changePassword = (oldPassword, newPassword) => act('changePassword', { oldPassword, newPassword });
 export const changeEmail = (password, email) => act('changeEmail', { password, email });
 export const deleteRole = (serverId, roleId) => act('deleteRole', { serverId, roleId });

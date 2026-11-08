@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { joinServer } from '../lib/store';
-import { Modal, ServerIcon, useUI } from './ui';
+import { Modal, ServerIcon, SpaceBanner, useUI } from './ui';
 
 // Fenêtre affichée à l'ouverture d'un lien d'invitation : infos de l'espace, puis Rejoindre ou Refuser.
 export default function InviteModal({ code, onDone }) {
@@ -35,9 +35,7 @@ export default function InviteModal({ code, onDone }) {
         <p className="py-10 text-center text-sm text-slate-500">{error || 'Chargement de l’invitation…'}</p>
       ) : (
         <div className="-mx-6 -mt-6 flex flex-col">
-          <div className="relative h-32 w-full overflow-hidden rounded-t-[2.5rem] bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400">
-            {info.banner && <img src={info.banner} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover object-center" />}
-          </div>
+          <SpaceBanner value={info.banner} className="h-32 w-full rounded-t-[2.5rem] bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400" />
           <div className="flex flex-col gap-4 px-6 pb-6">
             <div className="relative z-10 -mt-10 flex items-end gap-4">
               <span className="rounded-full ring-4 ring-surface shadow-soft"><ServerIcon server={info} className="h-20 w-20" /></span>

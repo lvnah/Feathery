@@ -4,7 +4,7 @@ import {
   leaveVoice, membersOf, membership, roleColorOf, roleNameOf, roleRank, rolesOf, sendFriendRequest, sendMessage,
   assignRole, deleteMessage,
 } from '../lib/store';
-import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal } from '../components/ui';
+import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner } from '../components/ui';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import VoiceScreen from '../components/VoiceScreen';
 import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
@@ -227,11 +227,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       {/* Barre d'en-tête de l'espace */}
-      {server.banner && (
-        <div className="relative h-32 shrink-0 overflow-hidden rounded-[2rem] shadow-soft max-lg:hidden">
-          <img src={server.banner} alt="" draggable={false} className="h-full w-full object-cover object-center" />
-        </div>
-      )}
+      {server.banner && <SpaceBanner value={server.banner} className="h-32 shrink-0 rounded-[2rem] shadow-soft max-lg:hidden" />}
       <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">
         <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu de l’espace" className="ml-auto hidden rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 max-lg:block">
           Menu

@@ -182,3 +182,12 @@ export function nameStyle(user) {
   }
   return { color: c };
 }
+
+// Bannière d'espace : 'preset:gN' (bannière de base), 'preset:<clé>' (PLUS), ou une image.
+export function espaceBannerUser(value) {
+  const v = String(value || '');
+  if (!v.startsWith('preset:')) return null;
+  const key = v.slice(7);
+  if (/^g[0-5]$/.test(key)) return { banner: { type: 'gradient', index: Number(key.slice(1)) } };
+  return { banner: { type: 'preset', key } };
+}

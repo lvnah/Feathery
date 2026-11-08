@@ -109,7 +109,7 @@ export default function SettingsView() {
   const { toast } = useUI();
   const me = getMe(s);
   const st = me.settings || {};
-  const set = (patch) => run(toast, () => updateSettings(patch));
+  const set = (patch) => updateSettings(patch).catch((err) => toast(err.message));
 
   return (
     <div className="thin-scroll flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
