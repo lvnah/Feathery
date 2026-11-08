@@ -63,7 +63,8 @@ export default function App() {
   const s = useStore();
   const me = s ? getMe(s) : null;
   // Thème clair / sombre choisi dans Paramètres.
-  const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
+  // Thème unique : sombre.
+  const themeName = 'dark';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
   // Pas de glisser-déposer dans l'appli : une image déposée dans le chat donnerait son lien.
   // Seuls les champs d'import de fichier (input type="file") acceptent un dépôt.
