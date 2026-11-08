@@ -1,6 +1,7 @@
 import { changeEmail, changePassword, getMe, logout, updateSettings } from '../lib/store';
 import { useState } from 'react';
 import { ErrorLine, useStore, useUI } from '../components/ui';
+import { canChooseOutput, getAudioPrefs, listAudioDevices, setAudioPrefs } from '../lib/voice';
 import PageBanner from '../components/PageBanner';
 import { run } from './ServerView';
 
@@ -50,6 +51,53 @@ function Toggle({ label, hint, checked, onChange }) {
       </span>
       <input type="checkbox" className="h-5 w-5 shrink-0 accent-brand-500" checked={checked} onChange={(e) => onChange(e.target.checked)} />
     </label>
+  );
+}
+
+// Micro et haut-parleur utilisés pendant les vocaux.
+function AudioCard() {
+  const [devices, setDevices] = useState(null);
+  const [prefs, setPrefs] = useState(getAudioPrefs());
+  const [error, setError] = useState('');
+  const load = async () => {
+    setError('');
+    try {
+      setDevices(await listAudioDevices());
+    } catch (err) {
+      setError('Autorisez le micro pour voir vos appareils.');
+    }
+  };
+  const choose = (patch) => {
+    setAudioPrefs(patch);
+    setPrefs(getAudioPrefs());
+  };
+  const select = (label, list, key) => (
+    <label className="flex flex-col gap-2 text-sm font-bold text-slate-700">
+      {label}
+      <select className="field" value={prefs[key] || ''} onChange={(e) => choose({ [key]: e.target.value })}>
+        <option value="">Par défaut</option>
+        {list.map((d) => (
+          <option key={d.deviceId} value={d.deviceId}>{d.label || `Appareil ${d.deviceId.slice(0, 6)}`}</option>
+        ))}
+      </select>
+    </label>
+  );
+  return (
+    <Card title="Micro et haut-parleur">
+      {!devices ? (
+        <button type="button" onClick={load} className="btn-ghost self-start">Afficher mes appareils</button>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {select('Micro (entrée)', devices.inputs, 'input')}
+          {canChooseOutput() ? (
+            select('Haut-parleur (sortie)', devices.outputs, 'output')
+          ) : (
+            <p className="text-xs text-slate-500 md:col-span-2">Le choix du haut-parleur n’est pas disponible sur ce navigateur : utilisez le réglage de votre appareil.</p>
+          )}
+        </div>
+      )}
+      <ErrorLine>{error}</ErrorLine>
+    </Card>
   );
 }
 
@@ -145,6 +193,8 @@ export default function SettingsView() {
             ]}
           />
         </Card>
+
+        <AudioCard />
 
         <PersonalInfo me={me} toast={toast} />
 
