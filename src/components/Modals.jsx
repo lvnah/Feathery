@@ -190,7 +190,7 @@ function MiniProfileModal({ userId, serverId, onClose }) {
         </button>
         <div>
           <p className="flex items-center gap-2 text-lg font-extrabold" style={{ color }}>{user.pseudo}<RoleBadge user={user} />{user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}</p>
-          <p className="text-sm text-slate-400">#{user.tag} · <span style={{ color: statusColor(user) }}>{statusLabel(user)}</span></p>
+          <p className="text-sm text-slate-400">#{user.tag} · <span style={{ color: statusColor(user) }}>{statusLabel(user)}</span>{isOnline(user) && user.device === 'mobile' && <Icon name="phone" title="Connecté sur téléphone ou tablette" className="ml-1.5 inline h-3.5 w-3.5 align-[-2px]" />}</p>
         </div>
         <p className="text-sm text-slate-600">{user.bio || 'Aucune biographie.'}</p>
         <div className="rounded-2xl bg-slate-50 p-4">

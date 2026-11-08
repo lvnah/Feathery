@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Splash from './components/Splash';
-import { getMe, getState, leaveVoice, refresh, setVoiceMutedRemote } from './lib/store';
+import { getMe, getState, joinServer, leaveVoice, refresh, setVoiceMutedRemote } from './lib/store';
 import { isVoiceMuted, setVoiceErrorHandler, stopVoice, syncVoice } from './lib/voice';
 import { playJoin, playLeave } from './lib/sounds';
 import { startPresence, stopPresence } from './lib/presence';
@@ -22,6 +22,9 @@ import ProfileView from './views/ProfileView';
 import AdminPanel from './views/AdminPanel';
 
 // Routage par état. La vue « espace » s'affiche plein écran (sans sidebar), comme la capture.
+// Téléphone ou tablette (y compris iPad) : utilisé pour l'icône dans les mini-profils.
+const isPhoneOrTablet = () => /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
+
 // Chemin d'URL -> vue. Seul /admin change de vue ; le reste est l'accueil (routage par état).
 function viewFromPath(pathname) {
   return pathname.startsWith('/admin') ? { name: 'admin' } : { name: 'home' };
@@ -79,6 +82,15 @@ export default function App() {
       window.removeEventListener('dragstart', noImageDrag, true);
     };
   }, []);
+  // Invitation retenue avant la connexion : on rejoint l'espace dès que la session est ouverte.
+  useEffect(() => {
+    const code = me && sessionStorage.getItem('hevenly:join');
+    if (!code) return;
+    sessionStorage.removeItem('hevenly:join');
+    joinServer(code)
+      .then((res) => setView({ name: 'server', serverId: res.id }))
+      .catch((err) => toast(err.message));
+  }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Retour sur l'onglet ou retour du réseau : on se resynchronise tout de suite.
   useEffect(() => {
     const resync = () => { if (!document.hidden) refresh(); };
@@ -105,7 +117,7 @@ export default function App() {
   const loggedIn = !!me;
   useEffect(() => {
     if (loggedIn) {
-      startPresence(getToken());
+      startPresence(getToken(), isPhoneOrTablet() ? 'mobile' : 'desktop');
       startEvents(() => refresh());
     } else {
       stopPresence();
@@ -258,7 +270,7 @@ export default function App() {
   return (
     <UIContext.Provider value={ui}>
       {content}
-      {me && inviteCode && <InviteModal code={inviteCode} onDone={closeInvite} />}
+      {inviteCode && <InviteModal code={inviteCode} loggedIn={!!me} onDone={closeInvite} />}
       {splash && <Splash onDone={endSplash} />}
       <ModalHost modal={modal} onClose={closeModal} />
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} />}

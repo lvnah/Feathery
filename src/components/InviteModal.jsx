@@ -4,7 +4,7 @@ import { joinServer } from '../lib/store';
 import { Modal, ServerIcon, SpaceBanner, useUI } from './ui';
 
 // Fenêtre affichée à l'ouverture d'un lien d'invitation : infos de l'espace, puis Rejoindre ou Refuser.
-export default function InviteModal({ code, onDone }) {
+export default function InviteModal({ code, loggedIn = true, onDone }) {
   const { go } = useUI();
   const [info, setInfo] = useState(null);
   const [error, setError] = useState('');
@@ -17,6 +17,12 @@ export default function InviteModal({ code, onDone }) {
   }, [code]);
 
   const join = async () => {
+    // Pas connecté : on retient l'invitation, la connexion la rejoindra automatiquement.
+    if (!loggedIn) {
+      sessionStorage.setItem('hevenly:join', code);
+      onDone();
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -49,7 +55,7 @@ export default function InviteModal({ code, onDone }) {
             {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
             <div className="grid grid-cols-2 gap-3">
               <button type="button" onClick={onDone} className="btn-ghost min-h-[48px]" disabled={busy}>Refuser</button>
-              <button type="button" onClick={join} className="btn-primary min-h-[48px]" disabled={busy}>{busy ? 'Connexion…' : 'Rejoindre'}</button>
+              <button type="button" onClick={join} className="btn-primary min-h-[48px]" disabled={busy}>{busy ? 'Connexion…' : loggedIn ? 'Rejoindre' : 'Se connecter pour rejoindre'}</button>
             </div>
           </div>
         </div>
