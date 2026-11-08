@@ -223,17 +223,20 @@ html[data-theme="dark"] .text-slate-500 { color: #9aa1ab; }
 html[data-theme="dark"] .text-slate-400 { color: #6b7280; }
 html[data-theme="dark"] .hover\:text-slate-900:hover { color: #ffffff; }
 html[data-theme="dark"] .hover\:text-white:hover { color: #ffffff; }
-/* Teintes de marque en sombre (boutons secondaires, badges, cartes actives). */
-html[data-theme="dark"] .bg-brand-50, html[data-theme="dark"] .\!bg-brand-50 { background-color: #0f2a1f !important; }
-html[data-theme="dark"] .bg-brand-100, html[data-theme="dark"] .\!bg-brand-100 { background-color: #14392a !important; }
-html[data-theme="dark"] .border-brand-100 { border-color: #1d4a36 !important; }
-html[data-theme="dark"] .border-brand-300, html[data-theme="dark"] .border-brand-400 { border-color: #2f7d5a !important; }
-html[data-theme="dark"] .text-brand-700, html[data-theme="dark"] .\!text-brand-700 { color: #6ee7b0; }
-html[data-theme="dark"] .text-brand-800 { color: #a7f3d0; }
-html[data-theme="dark"] .text-brand-600 { color: #4ade80; }
-html[data-theme="dark"] .text-brand-400 { color: #34d399; }
-html[data-theme="dark"] .text-brand-600, html[data-theme="dark"] .text-brand-700, html[data-theme="dark"] .text-brand-800 { text-shadow: none; }
 /* Boutons clairs et pastilles en sombre. */
 html[data-theme="dark"] .btn-soft { background-color: #1a1d22 !important; color: #ffffff !important; }
 html[data-theme="dark"] .btn-soft:hover { background-color: #23272e !important; }
 html[data-theme="dark"] [class*="bg-white/"] { background-color: #111418 !important; }
+
+/* Boutons principaux : clairs sur fond sombre, texte noir. */
+html[data-theme="dark"] .btn-primary, html[data-theme="dark"] .btn-soft { color: #09090b !important; }
+html[data-theme="dark"] .btn-primary { background-color: #e4e4e7 !important; }
+html[data-theme="dark"] .btn-primary:hover { background-color: #ffffff !important; }
+/* Accueil revisité : pas de rejeu de l'animation d'arrivée. */
+.hero-done .hero-tag { display: none; }
+.hero-done .hero-word, .hero-done .hero-word-in, .hero-done .hero-letter, .hero-done .hero-logo-wrap, .hero-done .hero-cta { animation: none !important; }
+/* Salon actif et boutons en sombre : gris foncé, texte blanc. */
+html[data-theme="dark"] .bg-brand-600 { background-color: #27272a !important; }
+html[data-theme="dark"] .border-brand-500 { border-color: #71717a !important; }
+html[data-theme="dark"] .bg-brand-500 { background-color: #e4e4e7 !important; }
+html[data-theme="dark"] .bg-brand-500.text-white, html[data-theme="dark"] .text-white.bg-brand-500 { color: #09090b !important; }

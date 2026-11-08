@@ -173,7 +173,7 @@ function MiniProfileModal({ userId, serverId, onClose }) {
   const me = getMe(s);
   const user = getUser(s, userId);
   if (!user) return null;
-  const color = roleColorOf(s, serverId, user.id) || '#374151';
+  const color = roleColorOf(s, serverId, user.id) || '#d4d4d8';
   const roleName = roleNameOf(s, serverId, user.id);
 
   return (

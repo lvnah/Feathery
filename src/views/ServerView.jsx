@@ -163,7 +163,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
 
   // Une ligne de membre (liste de droite).
   const memberRow = (u) => {
-    const color = roleColorOf(s, serverId, u.id) || '#374151';
+    const color = roleColorOf(s, serverId, u.id) || '#d4d4d8';
     const online = isOnline(u);
     return (
       <button
@@ -299,7 +299,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
               onClick={() => { unlockAudio(); run(toast, () => joinVoice(c.id), `Connecté à ${c.name}`); }}
               onContextMenu={(e) => channelMenu(e, c)}
               className={`flex min-w-[12rem] shrink-0 flex-col justify-between gap-3 rounded-3xl px-4 py-3 text-left transition max-lg:min-w-[8rem] max-lg:gap-1 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2 ${
-                inside ? 'bg-brand-500 text-white shadow-[0_12px_30px_-12px_rgba(0,116,84,0.8)]' : 'border-2 border-slate-300 bg-surface text-slate-900 shadow-soft'
+                inside ? 'bg-brand-500 text-white shadow-[0_12px_30px_-12px_rgba(120,120,128,0.8)]' : 'border-2 border-slate-300 bg-surface text-slate-900 shadow-soft'
               }`}
             >
               <span className="flex items-center justify-between">
@@ -405,7 +405,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                 {messages.map((m) => {
                   const author = getUser(s, m.user_id);
                   if (!author) return null;
-                  const color = roleColorOf(s, serverId, author.id) || '#374151';
+                  const color = roleColorOf(s, serverId, author.id) || '#d4d4d8';
                   return (
                     <div key={m.id} className="group flex items-center gap-4 rounded-3xl border border-slate-100 bg-surface px-5 py-4 shadow-soft">
                       <button onClick={() => openModal('mini', { userId: author.id, serverId })} onContextMenu={(e) => memberMenu(e, author.id)} aria-label={`Profil de ${author.pseudo}`}>
@@ -446,7 +446,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                     maxLength={2000}
                     onChange={(e) => setText(e.target.value)}
                   />
-                  <button type="submit" disabled={!text.trim() || (current.readonly && !canManage)} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(34,197,94,0.8)] transition hover:bg-brand-600 disabled:opacity-40">
+                  <button type="submit" disabled={!text.trim() || (current.readonly && !canManage)} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(120,120,128,0.8)] transition hover:bg-brand-600 disabled:opacity-40">
                     <Icon name="send" className="h-5 w-5" />
                   </button>
                 </div>
