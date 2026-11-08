@@ -66,13 +66,14 @@ export default function Layout({ view, children }) {
           <span className="h-2 w-2 rounded-full bg-brand-500" />
         </div>
 
+        <p className="px-4 text-[11px] font-bold uppercase tracking-widest text-slate-500">Navigation</p>
         <nav className="flex shrink-0 flex-col gap-1">
           {nav.map((item) => (
             <button
               key={item.key}
               onClick={() => navigate(item.view)}
               className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-[15px] font-semibold transition lg:py-3 ${
-                isActive(item) ? 'bg-brand-100 text-brand-700' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'
+                isActive(item) ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               <Icon name={item.icon} className="h-5 w-5" />

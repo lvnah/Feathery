@@ -164,14 +164,6 @@ export default function SettingsView() {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <PageBanner icon="settings" title="Paramètres" subtitle="Gérez l’application : apparence, messages et demandes." />
 
-        <Card title="Apparence">
-          <Choice
-            value={st.theme === 'dark' ? 'dark' : 'light'}
-            onChange={(v) => set({ theme: v })}
-            options={[['light', 'Clair', 'Fond blanc, le thème d’origine'], ['dark', 'Sombre', 'Fond sombre, plus doux pour les yeux']]}
-          />
-        </Card>
-
         <Card title="Messages privés">
           <Choice
             value={st.dmOpen ? 'open' : 'request'}

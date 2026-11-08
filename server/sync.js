@@ -34,7 +34,7 @@ export function publicUser(u) {
 
 export function buildSnapshot(me) {
   // Réglages propres au membre connecté (thème, messages, demandes d'amis).
-  const mySettings = { theme: me.theme === 'dark' ? 'dark' : 'light', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0 };
+  const mySettings = { theme: 'dark', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0 };
   const servers = all(
     `SELECT s.* FROM servers s JOIN memberships m ON m.server_id = s.id
      WHERE m.user_id = ? ORDER BY s.created_at`,

@@ -191,74 +191,49 @@
   to { opacity: 1; }
 }
 
-/* ---- Thème sombre (Paramètres > Apparence) : redéfinit les couleurs claires utilisées dans l'appli ---- */
-html[data-theme="dark"] { color-scheme: dark; }
-html[data-theme="dark"] body {
-  background: linear-gradient(135deg, #050b08 0%, #0b1410 45%, #071a12 100%) !important;
-  color: #e8f5ee;
-}
-html[data-theme="dark"] .panel { background-color: rgba(17, 26, 22, 0.82) !important; border-color: rgba(255, 255, 255, 0.06) !important; }
-html[data-theme="dark"] .field { background-color: #0f1714 !important; border-color: #2b3c34 !important; color: #e8f5ee !important; }
-html[data-theme="dark"] .field::placeholder { color: #6f867b; }
-html[data-theme="dark"] .thin-scroll { scrollbar-color: #2b3c34 transparent; }
-html[data-theme="dark"] .bg-white { background-color: #111a16 !important; }
-html[data-theme="dark"] .bg-surface { background-color: #111a16 !important; }
-html[data-theme="dark"] .bg-slate-50 { background-color: #0f1714 !important; }
-html[data-theme="dark"] .bg-slate-100 { background-color: #17221e !important; }
-html[data-theme="dark"] .bg-slate-200 { background-color: #1d2b25 !important; }
-html[data-theme="dark"] .bg-slate-300 { background-color: #26372f !important; }
-html[data-theme="dark"] .bg-brand-50 { background-color: #0f2a1f !important; }
-html[data-theme="dark"] .bg-brand-100 { background-color: #14392a !important; }
-html[data-theme="dark"] .text-slate-900 { color: #e8f5ee; }
-html[data-theme="dark"] .text-slate-800 { color: #dbeee4; }
-html[data-theme="dark"] .text-slate-700 { color: #c9dcd2; }
-html[data-theme="dark"] .text-slate-600 { color: #aec4b9; }
-html[data-theme="dark"] .text-slate-500 { color: #8fa69a; }
-html[data-theme="dark"] .text-slate-400 { color: #6f867b; }
-html[data-theme="dark"] .text-brand-700 { color: #6ee7b0; }
-html[data-theme="dark"] .text-brand-600 { color: #4ade80; }
-html[data-theme="dark"] .border-slate-100 { border-color: #223029 !important; }
-html[data-theme="dark"] .border-slate-200 { border-color: #2b3c34 !important; }
-html[data-theme="dark"] .border-line { border-color: #2b3c34 !important; }
-html[data-theme="dark"] .hover\:bg-slate-200:hover { background-color: #1d2b25 !important; }
-html[data-theme="dark"] .hover\:bg-slate-300:hover { background-color: #26372f !important; }
-html[data-theme="dark"] .hover\:text-slate-900:hover { color: #e8f5ee; }
-html[data-theme="dark"] .hover\:bg-surface:hover { background-color: #17221e !important; }
+/* ---- Thème sombre unique : palette neutre, texte blanc, logo blanc. Bannières et couleurs de pseudo gardent leurs couleurs. ---- */
+:root, html[data-theme="dark"] { color-scheme: dark; }
+html[data-theme="dark"] body { background: #0a0c0f !important; color: #ffffff; }
+html[data-theme="dark"] .panel { background-color: #111418 !important; border-color: rgba(255, 255, 255, 0.06) !important; }
+html[data-theme="dark"] .sidebar-drawer { background-color: #0c0e11 !important; border-color: rgba(255, 255, 255, 0.05) !important; }
+html[data-theme="dark"] .field { background-color: #15181d !important; border-color: #262b33 !important; color: #ffffff !important; }
+html[data-theme="dark"] .field::placeholder { color: #6b7280; }
+html[data-theme="dark"] img[src*="/assets/logo-"] { filter: brightness(0) invert(1); }
+html[data-theme="dark"] .thin-scroll { scrollbar-color: #2a2f37 transparent; }
+html[data-theme="dark"] .bg-white { background-color: #111418 !important; }
+html[data-theme="dark"] .bg-surface { background-color: #111418 !important; }
+html[data-theme="dark"] .bg-slate-50 { background-color: #15181d !important; }
+html[data-theme="dark"] .bg-slate-100 { background-color: #1a1d22 !important; }
+html[data-theme="dark"] .bg-slate-200 { background-color: #23272e !important; }
+html[data-theme="dark"] .bg-slate-300 { background-color: #2b3038 !important; }
+html[data-theme="dark"] .hover\:bg-slate-200:hover { background-color: #23272e !important; }
+html[data-theme="dark"] .hover\:bg-slate-300:hover { background-color: #2b3038 !important; }
+html[data-theme="dark"] .hover\:bg-white\/5:hover { background-color: rgba(255,255,255,0.05) !important; }
+html[data-theme="dark"] .hover\:bg-surface:hover { background-color: #1a1d22 !important; }
+html[data-theme="dark"] .border-slate-100 { border-color: #1f2329 !important; }
+html[data-theme="dark"] .border-slate-200 { border-color: #2a2f37 !important; }
+html[data-theme="dark"] .border-slate-300 { border-color: #3a404a !important; }
+html[data-theme="dark"] .border-line { border-color: #2a2f37 !important; }
 html[data-theme="dark"] .hover\:border-brand-200:hover { border-color: #2f6b52 !important; }
-
-/* ---- Mobile et tablette ---- */
-@media (max-width: 1023px) {
-  .panel { border-radius: 1.75rem; }
-}
-@media (max-width: 640px) {
-  /* 16 px minimum : évite le zoom automatique sur iPhone à la saisie */
-  input, select, textarea { font-size: 16px !important; }
-  .btn-primary, .btn-ghost, .btn-soft, .btn-danger { min-height: 44px; }
-}
-@media (pointer: coarse) {
-  button { touch-action: manipulation; }
-}
-.mobile-nav {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-}
-
-/* Bannières préréglées PLUS : le dégradé glisse doucement. */
-@keyframes banner-drift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* Bannière admin : le logo flotte doucement pendant que le dégradé glisse. */
-@keyframes banner-drift-logo {
-  0%, 100% { background-position: center, 0% 50%; }
-  50% { background-position: center, 100% 50%; }
-}
-
-/* Léger sur téléphone et tablette : pas de flou (coûteux), effets décoratifs réduits. */
-@media (max-width: 1023px) {
-  .panel { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(255, 255, 255, 0.97); }
-  .mobile-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-}
-@media (max-width: 640px) {
-  .hero-particle, .hero-ring-2, .hero-aura { display: none; }
-}
+html[data-theme="dark"] .text-slate-900 { color: #ffffff; }
+html[data-theme="dark"] .text-slate-800 { color: #f1f3f5; }
+html[data-theme="dark"] .text-slate-700 { color: #e5e7eb; }
+html[data-theme="dark"] .text-slate-600 { color: #cfd3da; }
+html[data-theme="dark"] .text-slate-500 { color: #9aa1ab; }
+html[data-theme="dark"] .text-slate-400 { color: #6b7280; }
+html[data-theme="dark"] .hover\:text-slate-900:hover { color: #ffffff; }
+html[data-theme="dark"] .hover\:text-white:hover { color: #ffffff; }
+/* Teintes de marque en sombre (boutons secondaires, badges, cartes actives). */
+html[data-theme="dark"] .bg-brand-50, html[data-theme="dark"] .\!bg-brand-50 { background-color: #0f2a1f !important; }
+html[data-theme="dark"] .bg-brand-100, html[data-theme="dark"] .\!bg-brand-100 { background-color: #14392a !important; }
+html[data-theme="dark"] .border-brand-100 { border-color: #1d4a36 !important; }
+html[data-theme="dark"] .border-brand-300, html[data-theme="dark"] .border-brand-400 { border-color: #2f7d5a !important; }
+html[data-theme="dark"] .text-brand-700, html[data-theme="dark"] .\!text-brand-700 { color: #6ee7b0; }
+html[data-theme="dark"] .text-brand-800 { color: #a7f3d0; }
+html[data-theme="dark"] .text-brand-600 { color: #4ade80; }
+html[data-theme="dark"] .text-brand-400 { color: #34d399; }
+html[data-theme="dark"] .text-brand-600, html[data-theme="dark"] .text-brand-700, html[data-theme="dark"] .text-brand-800 { text-shadow: none; }
+/* Boutons clairs et pastilles en sombre. */
+html[data-theme="dark"] .btn-soft { background-color: #1a1d22 !important; color: #ffffff !important; }
+html[data-theme="dark"] .btn-soft:hover { background-color: #23272e !important; }
+html[data-theme="dark"] [class*="bg-white/"] { background-color: #111418 !important; }
