@@ -28,6 +28,7 @@ export function publicUser(u) {
         ? { type: 'image', value: u.banner_value }
         : { type: 'gradient', index: Number(u.banner_value) || 0 },
     last_activity: u.last_activity,
+    device: u.device || '',
   };
 }
 

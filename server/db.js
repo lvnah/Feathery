@@ -126,6 +126,7 @@ addColumn('users', 'dm_open', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'accept_friend_requests', 'INTEGER NOT NULL DEFAULT 1');
 addColumn('users', 'email', "TEXT NOT NULL DEFAULT ''");
 addColumn('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 1');
+addColumn('users', 'device', "TEXT NOT NULL DEFAULT ''");
 addColumn('channels', 'readonly', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('servers', 'banner', "TEXT NOT NULL DEFAULT ''");
 // Statistiques de jeux affichées dans le profil (3 maximum par membre).

@@ -148,7 +148,9 @@ async function handleApi(req, res, path) {
   // Battement de cœur de présence (léger, sans synchronisation complète).
   if (req.method === 'POST' && path === '/api/presence/ping') {
     const me = requireUser(req);
-    db.prepare('UPDATE users SET last_activity = ? WHERE id = ?').run(Date.now(), me.id);
+    let device = 'desktop';
+    try { device = (await readJson(req)).device === 'mobile' ? 'mobile' : 'desktop'; } catch { /* corps vide : ordinateur par défaut */ }
+    db.prepare('UPDATE users SET last_activity = ?, device = ? WHERE id = ?').run(Date.now(), device, me.id);
     return send(res, 200, { ok: true });
   }
   // Recherche d'un membre (pseudo et tag) : sur tous les comptes, pas seulement ceux déjà connus.
