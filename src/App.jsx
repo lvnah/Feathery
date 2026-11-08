@@ -61,6 +61,16 @@ export default function App() {
   // Thème clair / sombre choisi dans Paramètres.
   const themeName = me?.settings?.theme === 'dark' ? 'dark' : 'light';
   useEffect(() => { document.documentElement.dataset.theme = themeName; }, [themeName]);
+  // Retour sur l'onglet ou retour du réseau : on se resynchronise tout de suite.
+  useEffect(() => {
+    const resync = () => { if (!document.hidden) refresh(); };
+    document.addEventListener('visibilitychange', resync);
+    window.addEventListener('online', resync);
+    return () => {
+      document.removeEventListener('visibilitychange', resync);
+      window.removeEventListener('online', resync);
+    };
+  }, []);
   // Fermer la page du navigateur : passer hors ligne et quitter le vocal tout de suite.
   // Réduire la fenêtre ou changer d'onglet ne déclenche pas cet événement : on reste connecté.
   useEffect(() => {

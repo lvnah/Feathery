@@ -136,10 +136,10 @@ function OwnProfile() {
               <ImportButton onChange={pick(setAvatar, AVATAR_OPTS)} label={avatar ? 'Changer la photo' : 'Importer une photo'} />
             </Field>
 
-            {me.is_plus && (
+            {(me.is_plus || me.is_admin) && (
               <Field label="Bannières PLUS" accent>
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(PLUS_BANNER_PRESETS).map(([key, preset]) => (
+                  {Object.entries(PLUS_BANNER_PRESETS).filter(([, preset]) => !preset.admin || me.is_admin).map(([key, preset]) => (
                     <button
                       key={key}
                       type="button"

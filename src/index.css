@@ -242,3 +242,9 @@ html[data-theme="dark"] .hover\:border-brand-200:hover { border-color: #2f6b52 !
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
+
+/* Bannière admin : le logo flotte doucement pendant que le dégradé glisse. */
+@keyframes banner-drift-logo {
+  0%, 100% { background-position: center, 0% 50%; }
+  50% { background-position: center, 100% 50%; }
+}

@@ -78,7 +78,7 @@ const IMAGE_LIMITS = { avatar: 60_000, banner: 160_000, icon: 60_000, espace: 70
 const GIF_LIMITS = { avatar: 12_000_000, banner: 17_000_000, espace: 17_000_000 };
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS.
 const NAME_COLORS_BASIC = ['#111827', '#dc2626', '#2563eb', '#16a34a', '#9333ea', '#ea580c'];
-const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#be123c', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy'];
+const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#be123c', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet'];
 const imageData = (value, kind, isPlus = false) => {
   // Renvoie l'URL de l'image enregistrée (les données ne sont plus gardées dans la ligne).
   const v = String(value ?? '').trim();
@@ -180,8 +180,12 @@ const handlers = {
         bannerValue = imageData(p.banner.value, 'banner', !!me.is_plus);
         if (!bannerValue) fail('Image de bannière manquante.');
       } else if (p.banner.type === 'preset') {
-        if (!me.is_plus) fail('Les bannières préréglées sont réservées aux membres PLUS.', 403);
-        if (!PLUS_PRESETS.includes(p.banner.key)) fail('Bannière inconnue.');
+        if (p.banner.key === 'feathery') {
+          if (!me.is_admin) fail('Cette bannière est réservée aux administrateurs.', 403);
+        } else {
+          if (!me.is_plus) fail('Les bannières préréglées sont réservées aux membres PLUS.', 403);
+          if (!PLUS_PRESETS.includes(p.banner.key)) fail('Bannière inconnue.');
+        }
         bannerType = 'preset';
         bannerValue = p.banner.key;
       } else {
