@@ -10,7 +10,7 @@ import { fullName } from '../lib/util';
 // Communauté : liste des espaces publics, visibles par tous. Les espaces privés n'apparaissent jamais ici.
 export default function CommunityView() {
   const s = useStore();
-  const { go, toast } = useUI();
+  const { go, toast, openModal } = useUI();
   const me = getMe(s);
   const [selected, setSelected] = useState(null);
   const [q, setQ] = useState('');
@@ -20,7 +20,9 @@ export default function CommunityView() {
   return (
     <div className="thin-scroll flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <PageBanner icon="search" title="Communauté" subtitle={`${list.length} espace(s) public(s) à découvrir`} />
+        <PageBanner icon="search" title="Communauté" subtitle={`${list.length} espace(s) public(s) à découvrir`}>
+          <button onClick={() => openModal('createServer')} className="btn-primary !rounded-full !py-2.5">Créer un espace</button>
+        </PageBanner>
         <input className="field" placeholder="Rechercher un espace public…" value={q} onChange={(e) => setQ(e.target.value)} />
 
         {list.length === 0 && (

@@ -6,6 +6,8 @@ import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
+import { AttachButton, AttachPreview, MessageImage } from '../components/ChatAttach';
+import { chatImageFromFile } from '../lib/images';
 
 // Messages privés. Une personne qui n'est pas amie peut écrire : cela crée une demande de message.
 export default function MessagesView({ withId }) {
@@ -14,6 +16,7 @@ export default function MessagesView({ withId }) {
   const me = getMe(s);
   const unread = unreadCount(s);
   const [text, setText] = useState('');
+  const [image, setImage] = useState('');
   const [pending, setPending] = useState(null);
   const [error, setError] = useState('');
   const listRef = useRef(null);
@@ -50,16 +53,28 @@ export default function MessagesView({ withId }) {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [thread.length, withId]);
 
+  const pickImage = async (file) => {
+    try {
+      setImage(await chatImageFromFile(file));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!partner || !text.trim()) return;
+    if (!partner || (!text.trim() && !image)) return;
     setError('');
     const content = text;
+    const picture = image;
     setText('');
+    setImage('');
     try {
-      await sendDM(partner.id, content);
+      await sendDM(partner.id, content, picture);
     } catch (err) {
       setText(content);
+      setImage(picture);
       setError(err.message);
     }
   };
@@ -85,15 +100,15 @@ export default function MessagesView({ withId }) {
         )}
 
         {conversations.length === 0 && requests.length === 0 && <p className="px-2 text-sm text-slate-500">Aucune conversation active.</p>}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           {conversations.map(({ user, last }) => (
-            <div key={user.id} role="button" tabIndex={0} onClick={() => go({ name: 'messages', withId: user.id })} className={`flex cursor-pointer items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-slate-200 ${withId === user.id ? 'bg-brand-50' : ''}`}>
+            <div key={user.id} role="button" tabIndex={0} onClick={() => go({ name: 'messages', withId: user.id })} className={`flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 text-left transition hover:bg-slate-200 ${withId === user.id ? 'border-slate-500 bg-slate-200' : 'border-slate-300 bg-surface'}`}>
               <button type="button" onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="shrink-0 rounded-full" aria-label={`Profil de ${user.pseudo}`}>
                 <Avatar user={user} size="md" showStatus />
               </button>
               <span className="min-w-0 flex-1">
                 <span onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="inline-block max-w-full truncate font-bold hover:underline" style={nameStyle(user)}>{user.pseudo}</span>
-                <span className="block truncate text-xs text-slate-500">{last ? last.content : statusLabel(user)}</span>
+                <span className="block truncate text-xs text-slate-500">{last ? (last.content || (last.image ? 'Photo' : '')) : statusLabel(user)}</span>
               </span>
               <CountBadge n={unread.dms[user.id] || 0} />
               <button
@@ -161,7 +176,8 @@ export default function MessagesView({ withId }) {
               {thread.map((d) => {
                 const author = d.from === me.id ? me : partner;
                 return (
-                  <div key={d.id} className="flex items-center gap-4 rounded-3xl border border-slate-100 bg-surface px-5 py-4 shadow-soft">
+                  // Chaque message est une cellule distincte, comme dans les espaces.
+                  <div key={d.id} className="flex items-start gap-3 rounded-2xl border-2 border-slate-300 bg-slate-100 px-4 py-3 shadow-soft">
                     <button type="button" onClick={() => openUser(author.id)} className="shrink-0 rounded-full" aria-label={`Profil de ${author.pseudo}`}>
                       <Avatar user={author} size="md" />
                     </button>
@@ -171,7 +187,8 @@ export default function MessagesView({ withId }) {
                         <RoleBadge user={author} />
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{d.content}</p>
+                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{d.content}</p>}
+                      <MessageImage src={d.image} />
                     </div>
                     <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(d.created_at)}</span>
                     {d.from === me.id && (
@@ -186,9 +203,11 @@ export default function MessagesView({ withId }) {
 
             {!incomingRequest && (
               <form onSubmit={submit} className="border-t border-slate-100 p-4">
+                <AttachPreview src={image} onRemove={() => setImage('')} />
                 <div className="flex items-center gap-3">
+                  <AttachButton onPick={pickImage} />
                   <input className="field !rounded-2xl !bg-slate-100 !py-3.5" placeholder={hasRequestOnly || !thread.length ? `Écrire à ${partner.pseudo} (demande de message)` : `Envoyer un message à ${partner.pseudo}...`} value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} />
-                  <button type="submit" disabled={!text.trim()} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white transition hover:bg-brand-600 disabled:opacity-40">
+                  <button type="submit" disabled={!text.trim() && !image} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white transition hover:bg-brand-600 disabled:opacity-40">
                     <Icon name="send" className="h-5 w-5" />
                   </button>
                 </div>

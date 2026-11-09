@@ -7,6 +7,8 @@ import {
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner } from '../components/ui';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import VoiceScreen from '../components/VoiceScreen';
+import { AttachButton, AttachPreview, MessageImage } from '../components/ChatAttach';
+import { chatImageFromFile } from '../lib/images';
 import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
@@ -70,6 +72,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const messages = current ? s.messages.filter((m) => m.channel_id === current.id) : [];
 
   const [text, setText] = useState('');
+  const [image, setImage] = useState('');
   const [membersOpen, setMembersOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -130,17 +133,29 @@ export default function ServerView({ serverId, channelId, goHome }) {
   };
   const voiceUsers = (c) => s.voice.filter((v) => v.channel_id === c.id).map((v) => getUser(s, v.user_id)).filter(Boolean);
 
+  const pickImage = async (file) => {
+    try {
+      setImage(await chatImageFromFile(file));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!current || !text.trim()) return;
+    if (!current || (!text.trim() && !image)) return;
     // Le message part tout de suite : le champ est vidé avant la réponse du serveur.
     const content = text;
+    const picture = image;
     setText('');
+    setImage('');
     setError('');
     try {
-      await sendMessage(current.id, content);
+      await sendMessage(current.id, content, picture);
     } catch (err) {
       setText(content);
+      setImage(picture);
       setError(err.message);
     }
   };
@@ -227,7 +242,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       {/* Barre d'en-tête de l'espace */}
-      {server.banner && <SpaceBanner value={server.banner} className="h-32 shrink-0 rounded-[2rem] shadow-soft max-lg:hidden" />}
+      {server.banner && <SpaceBanner value={server.banner} className="h-16 shrink-0 rounded-3xl shadow-soft max-lg:hidden" />}
       <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">
         <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu de l’espace" className="ml-auto hidden rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 max-lg:block">
           Menu
@@ -407,7 +422,8 @@ export default function ServerView({ serverId, channelId, goHome }) {
                   if (!author) return null;
                   const color = roleColorOf(s, serverId, author.id) || '#d4d4d8';
                   return (
-                    <div key={m.id} className="group flex items-center gap-4 rounded-3xl border border-slate-100 bg-surface px-5 py-4 shadow-soft">
+                    // Chaque message est une cellule distincte : bordure marquée, fond propre, espace entre les cellules.
+                    <div key={m.id} className="group flex items-start gap-3 rounded-2xl border-2 border-slate-300 bg-slate-100 px-4 py-3 shadow-soft">
                       <button onClick={() => openModal('mini', { userId: author.id, serverId })} onContextMenu={(e) => memberMenu(e, author.id)} aria-label={`Profil de ${author.pseudo}`}>
                         <Avatar user={author} size="md" showStatus />
                       </button>
@@ -418,7 +434,8 @@ export default function ServerView({ serverId, channelId, goHome }) {
                           </button>
                           <RoleBadge user={author} />
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900">{m.content}</p>
+                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900">{m.content}</p>}
+                        <MessageImage src={m.image} />
                       </div>
                       <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(m.created_at)}</span>
                       {(isOwner || author.id === me.id) && (
@@ -437,7 +454,9 @@ export default function ServerView({ serverId, channelId, goHome }) {
               </div>
 
               <form onSubmit={submit} className="border-t border-slate-100 p-4">
+                <AttachPreview src={image} onRemove={() => setImage('')} />
                 <div className="flex items-center gap-3">
+                  <AttachButton onPick={pickImage} disabled={current.readonly && !canManage} />
                   <input
                     className="field !rounded-2xl !bg-slate-100 !py-3.5"
                     disabled={current.readonly && !canManage}
@@ -446,7 +465,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                     maxLength={2000}
                     onChange={(e) => setText(e.target.value)}
                   />
-                  <button type="submit" disabled={!text.trim() || (current.readonly && !canManage)} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(120,120,128,0.8)] transition hover:bg-brand-600 disabled:opacity-40">
+                  <button type="submit" disabled={(!text.trim() && !image) || (current.readonly && !canManage)} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(120,120,128,0.8)] transition hover:bg-brand-600 disabled:opacity-40">
                     <Icon name="send" className="h-5 w-5" />
                   </button>
                 </div>

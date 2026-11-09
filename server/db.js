@@ -129,6 +129,9 @@ addColumn('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 1');
 addColumn('users', 'device', "TEXT NOT NULL DEFAULT ''");
 addColumn('channels', 'readonly', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('servers', 'banner', "TEXT NOT NULL DEFAULT ''");
+// Pièce jointe d'un message (photo ou GIF) : adresse /api/img/… de l'image stockée.
+addColumn('messages', 'image', "TEXT NOT NULL DEFAULT ''");
+addColumn('dms', 'image', "TEXT NOT NULL DEFAULT ''");
 // Statistiques de jeux affichées dans le profil (3 maximum par membre).
 db.exec(`
 CREATE TABLE IF NOT EXISTS user_games (

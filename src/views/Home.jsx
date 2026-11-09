@@ -19,7 +19,7 @@ const PARTICLES = [
   { left: '92%', size: 4, delay: '9s', duration: '19s' },
 ];
 
-function HeroBanner({ onJoin }) {
+function HeroBanner({ onJoin, onCreate }) {
   // L'animation d'arrivée ne se joue qu'une fois par session : les retours sur l'accueil sont immédiats.
   const [played] = useState(() => { try { return sessionStorage.getItem('hevenly:hero') === '1'; } catch { return false; } });
   useEffect(() => { try { sessionStorage.setItem('hevenly:hero', '1'); } catch { /* navigation privée */ } }, []);
@@ -72,9 +72,14 @@ function HeroBanner({ onJoin }) {
         </div>
 
         {/* 3. Bouton d'entrée */}
-        <button onClick={onJoin} className="hero-cta btn-soft col-start-1 row-start-2 !rounded-full !px-6">
-          Rejoindre un espace
-        </button>
+        <div className="col-start-1 row-start-2 flex flex-wrap items-center justify-center gap-3">
+          <button onClick={onJoin} className="hero-cta btn-soft !rounded-full !px-6">
+            Rejoindre un espace
+          </button>
+          <button onClick={onCreate} className="hero-cta btn-ghost !rounded-full !px-6">
+            Créer un espace
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -167,7 +172,7 @@ export default function Home() {
       <div className="thin-scroll flex min-h-0 flex-1 gap-4 overflow-y-auto pb-2">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {/* Bannière de bienvenue */}
-          <HeroBanner onJoin={() => openModal('join')} />
+          <HeroBanner onJoin={() => openModal('join')} onCreate={() => openModal('createServer')} />
 
           {/* Espaces ou tableau de bord vide */}
           <section className="panel flex min-h-64 flex-1 flex-col p-6">

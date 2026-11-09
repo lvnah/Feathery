@@ -169,7 +169,7 @@ export const sendFriendRequest = (targetId) => act('sendFriendRequest', { target
 export const sendFriendRequestByTag = (query) => act('sendFriendRequest', { query });
 export const respondFriendRequest = (id, accept) => act('respondFriendRequest', { id, accept });
 export const removeFriend = (userId) => act('removeFriend', { userId });
-export const sendDM = (toId, content) => act('sendDM', { toId, content });
+export const sendDM = (toId, content, image = '') => act('sendDM', { toId, content, image });
 export const acceptDM = (peerId) => act('acceptDM', { peerId });
 export const refuseDM = (peerId) => act('refuseDM', { peerId });
 export const markDmRead = (peerId) => act('markDmRead', { peerId });
@@ -216,16 +216,16 @@ export const joinServer = (code) => act('joinServer', { code });
 export const regenerateInvite = (serverId) => act('regenerateInvite', { serverId });
 export const createChannel = (serverId, name, type) => act('createChannel', { serverId, name, type });
 export const deleteChannel = (channelId) => act('deleteChannel', { channelId });
-export const sendMessage = (channelId, content) => {
+export const sendMessage = (channelId, content, image = '') => {
   const me = state && getMe(state);
   const tmpId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   if (me) {
     patchLocal((s) => ({
       ...s,
-      messages: [...s.messages, { id: tmpId, channel_id: channelId, user_id: me.id, content, created_at: Date.now(), pending: true }],
+      messages: [...s.messages, { id: tmpId, channel_id: channelId, user_id: me.id, content, image, created_at: Date.now(), pending: true }],
     }));
   }
-  return act('sendMessage', { channelId, content }).catch((err) => {
+  return act('sendMessage', { channelId, content, image }).catch((err) => {
     patchLocal((s) => ({ ...s, messages: s.messages.filter((m) => m.id !== tmpId) }));
     throw err;
   });
