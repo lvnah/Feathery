@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { userFromToken } from './auth.js';
 import { buildSnapshot } from './sync.js';
 import { HttpError, changeEmail, changePassword, login, logout, register, runAction, verifyEmailToken } from './actions.js';
@@ -18,6 +19,13 @@ setInterval(() => {
   db.prepare('DELETE FROM voice_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(Date.now() - 60_000);
 }, 15_000).unref();
 db.prepare("UPDATE users SET name_color = '' WHERE is_admin = 0 AND name_color IN ('#dc2626', '#ef4444', '#be123c', 'rainbow-red')").run();
+// Panneau d'administration : accès séparé des comptes. Login = ADMIN_LOGIN (admin par défaut), mot de passe = ADMIN_PASSWORD du serveur.
+db.exec('CREATE TABLE IF NOT EXISTS admin_sessions (token TEXT PRIMARY KEY, created_at INTEGER NOT NULL)');
+const ADMIN_ME = { id: '__admin_panel__', pseudo: 'admin', tag: '0000', is_admin: 1, is_plus: 1 };
+const requireAdminToken = (req) => {
+  const row = db.prepare('SELECT token FROM admin_sessions WHERE token = ?').get(String(req.headers['x-admin-token'] || ''));
+  if (!row) throw new HttpError(401, 'Session administrateur expirée, reconnectez-vous.');
+};
 const migrated = migrateInlineImages();
 if (migrated) console.log(`${migrated} image(s) déplacée(s) hors de la synchronisation.`);
 
@@ -145,6 +153,32 @@ async function handleApi(req, res, path) {
     req.on('close', () => { clearInterval(ping); offVersion(push); });
     return undefined;
   }
+  // ----- Panneau d'administration (séparé des comptes) -----
+  if (req.method === 'POST' && path === '/api/admin/login') {
+    const body = await readJson(req);
+    const expected = process.env.ADMIN_PASSWORD || '';
+    if (!expected) throw new HttpError(503, 'Accès administrateur non configuré sur le serveur (variable ADMIN_PASSWORD).');
+    const login = String(body.login ?? '');
+    const given = String(body.password ?? '');
+    const pwdOk = given.length === expected.length && timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+    if (login !== (process.env.ADMIN_LOGIN || 'admin') || !pwdOk) throw new HttpError(401, 'Identifiant ou mot de passe incorrect.');
+    const token = randomBytes(24).toString('hex');
+    db.prepare('INSERT INTO admin_sessions (token, created_at) VALUES (?, ?)').run(token, Date.now());
+    return send(res, 200, { token });
+  }
+  if (req.method === 'GET' && path === '/api/admin/session') {
+    requireAdminToken(req);
+    return send(res, 200, { ok: true });
+  }
+  const adminAct = path.match(/^\/api\/admin\/action\/([A-Za-z]+)$/);
+  if (req.method === 'POST' && adminAct) {
+    requireAdminToken(req);
+    if (!adminAct[1].startsWith('admin')) throw new HttpError(404, 'Action inconnue.');
+    const result = await runAction(adminAct[1], ADMIN_ME, await readJson(req));
+    bumpVersion();
+    return send(res, 200, { ok: true, result: result ?? null });
+  }
+
   // Battement de cœur de présence (léger, sans synchronisation complète).
   if (req.method === 'POST' && path === '/api/presence/ping') {
     const me = requireUser(req);

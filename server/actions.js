@@ -750,6 +750,16 @@ const handlers = {
     run('UPDATE servers SET is_public = ? WHERE id = ?', p.isPublic ? 1 : 0, String(p.serverId ?? ''));
   },
 
+  // Changer le mot de passe d'un membre (administration uniquement).
+  adminSetPassword(me, p) {
+    requireAdmin(me);
+    const next = String(p.newPassword ?? '');
+    if (next.length < 8 || next.length > 200) fail('Le mot de passe doit faire entre 8 et 200 caractères.');
+    const target = one('SELECT id FROM users WHERE id = ?', String(p.userId ?? ''));
+    if (!target) fail('Membre introuvable.', 404);
+    run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(next), target.id);
+  },
+
   adminDismissReport(me, p) {
     requireAdmin(me);
     run('DELETE FROM reports WHERE id = ?', p.reportId);
