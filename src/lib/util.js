@@ -159,25 +159,19 @@ const RAINBOW_COLS = {
   violet: ['#7c3aed', '#c084fc', '#f0abfc'],
 };
 export const RAINBOW_LABELS = { rainbow: 'Arc-en-ciel', sunset: 'Coucher de soleil', ocean: 'Océan', aurora: 'Aurore', candy: 'Bonbon', neon: 'Néon', lagoon: 'Lagon', ruby: 'Fuchsia', lime: 'Citron vert', violet: 'Violet' };
-// Le dégradé est doublé et se termine par sa première couleur : l'animation boucle sans couture.
-const gradientOf = (cols) => {
-  const seq = [...cols, cols[0]].join(', ');
-  return `linear-gradient(90deg, ${seq}, ${seq})`;
-};
+const gradientOf = (cols) => `linear-gradient(90deg, ${cols.join(', ')})`;
 export const RAINBOW_GRADIENTS = Object.fromEntries(Object.entries(RAINBOW_COLS).map(([k, cols]) => [k, gradientOf(cols)]));
 
-// Style du pseudo : couleur simple, ou dégradé animé pour les couleurs arc-en-ciel.
+// Style du pseudo : couleur simple, ou dégradé arc-en-ciel fixe (pas d'animation : rendu net et fluide sur toutes les listes).
 export function nameStyle(user) {
   const c = user?.name_color;
   if (!c) return {};
   if (RAINBOW_GRADIENTS[c]) {
     return {
       backgroundImage: RAINBOW_GRADIENTS[c],
-      backgroundSize: '200% 100%',
       WebkitBackgroundClip: 'text',
       backgroundClip: 'text',
       color: 'transparent',
-      animation: 'name-shift 6s linear infinite',
     };
   }
   return { color: c };
