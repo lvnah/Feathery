@@ -57,7 +57,7 @@ export function buildSnapshot(me) {
   // 100 derniers messages par salon.
   const messages = cIds.length
     ? all(
-        `SELECT id, channel_id, user_id, content, created_at FROM (
+        `SELECT id, channel_id, user_id, content, image, created_at FROM (
            SELECT *, ROW_NUMBER() OVER (PARTITION BY channel_id ORDER BY created_at DESC) AS rn
            FROM messages WHERE channel_id IN (${marks(cIds)})
          ) WHERE rn <= 100 ORDER BY created_at`,
@@ -163,7 +163,7 @@ export function buildSnapshot(me) {
     messages,
     friendships: friendships.map((f) => ({ id: f.id, from: f.from_id, to: f.to_id, status: f.status })),
     hiddenDmPeers: [...hiddenSince.keys()],
-    dms: dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, created_at: d.created_at, status: d.status })),
+    dms: dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, image: d.image || '', created_at: d.created_at, status: d.status })),
     // Espaces publics (liste « Communauté ») : sans code d'invitation.
     communities: communities.map((c) => ({ ...c, is_member: ids_member.has(c.id) })),
     voice: voice.map((v) => ({ user_id: v.user_id, channel_id: v.channel_id, muted: !!v.muted })),

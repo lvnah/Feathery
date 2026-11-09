@@ -63,5 +63,20 @@ export function readGif(file, maxBytes, isPlus) {
     reader.readAsDataURL(file);
   });
 }
+// Pièce jointe d'un message : photo réduite (1280 px, WebP, léger) ; GIF gardé animé, 2 Mo maximum.
+export const CHAT_IMAGE_OPTS = { maxWidth: 1280, maxHeight: 1280, square: false };
+export const CHAT_GIF_MAX = 2_000_000; // octets
+export async function chatImageFromFile(file) {
+  if (file?.type === 'image/gif') {
+    if (file.size > CHAT_GIF_MAX) throw new Error('GIF trop lourd (2 Mo maximum).');
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Lecture du GIF impossible.'));
+      reader.readAsDataURL(file);
+    });
+  }
+  return fileToDataUrl(file, CHAT_IMAGE_OPTS);
+}
 export const GIF_MAX_AVATAR = 9_000_000; // octets du fichier
 export const GIF_MAX_BANNER = 12_000_000;

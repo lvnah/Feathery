@@ -31,7 +31,7 @@ export default function FriendsView() {
   };
 
   const row = (user, actions, sub) => (
-    <div key={user.id} className="panel flex items-center gap-4 p-4">
+    <div key={user.id} className="panel flex items-center gap-4 border-2 border-slate-300 p-4">
       <button onClick={() => go({ name: 'profile', userId: user.id })} className="flex min-w-0 flex-1 items-center gap-4 text-left">
         <Avatar user={user} size="md" showStatus />
         <span className="min-w-0">

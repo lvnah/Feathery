@@ -37,6 +37,18 @@ const text = (value, min, max, message) => {
   if (t.length < min || t.length > max) fail(message);
   return t;
 };
+// Corps d'un message (texte et/ou pièce jointe). Une photo ou un GIF (data URL, 2 Mo maximum) est stocké une fois.
+const CHAT_IMAGE_MAX = 2_800_000; // caractères de la data URL (≈ 2 Mo de fichier)
+const messageBody = (p, maxText) => {
+  const content = String(p.content ?? '').trim();
+  if (content.length > maxText) fail(`Message trop long (${maxText} caractères max).`);
+  const raw = String(p.image ?? '').trim();
+  if (!raw && !content) fail('Message vide.');
+  if (!raw) return { content, image: '' };
+  if (!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(raw)) fail('Format non pris en charge : PNG, JPEG, WebP ou GIF.');
+  if (raw.length > CHAT_IMAGE_MAX) fail('Image trop lourde (2 Mo maximum).');
+  return { content, image: storeImage(raw) ?? fail('Image illisible.') };
+};
 const transaction = (fn) => {
   db.exec('BEGIN');
   try {
@@ -286,7 +298,7 @@ const handlers = {
   // Message privé. Sans amitié ni conversation acceptée, c'est une demande de message :
   // le destinataire doit l'accepter avant de voir la conversation. Répondre vaut acceptation.
   sendDM(me, p) {
-    const content = text(p.content, 1, 1000, 'Message vide ou trop long (1000 caractères max).');
+    const { content, image } = messageBody(p, 1000);
     if (p.toId === me.id) fail('Vous ne pouvez pas vous écrire à vous-même.');
     if (!one('SELECT 1 FROM users WHERE id = ?', p.toId)) fail('Utilisateur introuvable.', 404);
     const pair = (a, b) => one('SELECT 1 FROM dms WHERE status = ? AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) LIMIT 1', 'ok', a, b, b, a);
@@ -306,8 +318,8 @@ const handlers = {
       if (pending >= 3) fail('Demande envoyée. Attendez sa réponse avant d’écrire à nouveau.', 429);
     }
     run(
-      'INSERT INTO dms (id, from_id, to_id, content, created_at, status) VALUES (?, ?, ?, ?, ?, ?)',
-      newId('d'), me.id, p.toId, content, now(), status,
+      'INSERT INTO dms (id, from_id, to_id, content, created_at, status, image) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      newId('d'), me.id, p.toId, content, now(), status, image,
     );
   },
 
@@ -434,8 +446,8 @@ const handlers = {
     if (!ch || ch.type !== 'text') fail('Salon texte introuvable.', 404);
     if (!isMember(ch.server_id, me.id)) fail('Vous n’êtes pas membre de cet espace.', 403);
     if (ch.readonly && !canManageChannels(ch.server_id, me.id)) fail('Ce salon est en lecture seule.', 403);
-    const content = text(p.content, 1, 2000, 'Message vide ou trop long (2000 caractères max).');
-    run('INSERT INTO messages (id, channel_id, user_id, content, created_at) VALUES (?, ?, ?, ?, ?)', newId('m'), ch.id, me.id, content, now());
+    const { content, image } = messageBody(p, 2000);
+    run('INSERT INTO messages (id, channel_id, user_id, content, created_at, image) VALUES (?, ?, ?, ?, ?, ?)', newId('m'), ch.id, me.id, content, now(), image);
   },
 
   // Bannière de l'espace (propriétaire) : image fixe pour tous ; GIF animé réservé aux membres PLUS.
