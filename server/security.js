@@ -48,8 +48,7 @@ export function securityHeaders(res, kind = 'api') {
   res.setHeader('Permissions-Policy', 'camera=(), geolocation=(), payment=(), usb=(), microphone=(self)');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  // La politique de contenu ne s'applique qu'aux pages HTML : l'appliquer aux données, scripts ou images bloquerait l'application.
   if (kind === 'app') res.setHeader('Content-Security-Policy', APP_CSP);
   else if (kind === 'verify') res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'");
-  else if (kind === 'image') res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-  else res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
 }

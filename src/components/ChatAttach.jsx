@@ -122,12 +122,12 @@ export function AttachPreview({ src, onRemove }) {
 
 // Photo ou GIF d'un message : chargée à la demande, cliquable pour l'ouvrir en grand.
 // Le repère GIF s'affiche sur les GIF animés.
-export function MessageImage({ src, gif = false }) {
+export function MessageImage({ src, gif = false, onLoad }) {
   if (!src) return null;
   const animated = gif || src.startsWith('data:image/gif');
   return (
     <a href={src} target="_blank" rel="noreferrer" className="relative mt-2 block w-fit max-w-full">
-      <img src={src} alt={animated ? 'GIF' : 'Image envoyée'} loading="lazy" decoding="async" className="max-h-72 max-w-full rounded-2xl object-contain" />
+      <img src={src} onLoad={onLoad} alt={animated ? 'GIF' : 'Image envoyée'} loading="lazy" decoding="async" className="max-h-72 max-w-full rounded-2xl object-contain" />
       {animated && (
         <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider text-white">
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />

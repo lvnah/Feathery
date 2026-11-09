@@ -703,6 +703,10 @@ const handlers = {
     const reason = text(p.reason, 3, 300, 'Motif : entre 3 et 300 caractères.');
     if (p.targetId === me.id) fail('Vous ne pouvez pas vous signaler vous-même.');
     if (!one('SELECT 1 FROM users WHERE id = ?', p.targetId)) fail('Utilisateur introuvable.', 404);
+    // Un membre ne peut être signalé qu'une seule fois par la même personne.
+    if (one('SELECT 1 FROM reports WHERE reporter_id = ? AND target_user_id = ? LIMIT 1', me.id, p.targetId)) {
+      fail('Vous avez déjà signalé ce membre.', 409);
+    }
     run(
       'INSERT INTO reports (id, reporter_id, target_user_id, reason, created_at, server_id) VALUES (?, ?, ?, ?, ?, ?)',
       newId('rp'), me.id, p.targetId, reason, now(), p.serverId ?? null,

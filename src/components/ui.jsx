@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
+import { useNow, timeAgo } from '../lib/clock';
+import { formatStamp } from '../lib/util';
 import { subscribe, getState } from '../lib/store';
 import { avatarGradient, bannerLogoLayer, bannerStyle, espaceBannerUser, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
 import Logo from './Logo';
@@ -232,4 +234,14 @@ export function EmptyState({ icon = 'bolt', title, children }) {
 export function ErrorLine({ children }) {
   if (!children) return null;
   return <p className="mt-2 rounded-2xl bg-red-50 px-4 py-2.5 text-sm text-red-600">{children}</p>;
+}
+
+// Horodatage relatif (« Il y a 10 secondes »), mis à jour automatiquement ; la date exacte apparaît au survol.
+export function TimeAgo({ ts, className = '' }) {
+  useNow();
+  return (
+    <time dateTime={new Date(ts).toISOString()} title={formatStamp(ts)} className={className}>
+      {timeAgo(ts)}
+    </time>
+  );
 }
