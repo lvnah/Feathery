@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createChannel, createServer, getMe, getUser, joinServer, regenerateInvite, reportUser, updateChannel, setChannelReadonly, setGames } from '../lib/store';
 import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
-import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor } from '../lib/util';
+import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle, fullName, inviteShown, inviteUrl, isOnline, statusLabel, statusColor } from '../lib/util';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
 import PlusBadge, { RoleBadge } from './PlusBadge';
 import Flag from './Flag';
@@ -46,7 +46,8 @@ function CreateServerModal({ onClose }) {
   const [icon, setIcon] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [code, setCode] = useState('');
-  const [banner, setBanner] = useState('');
+  // Sans choix, l'espace reçoit la bannière argent de base.
+  const [banner, setBanner] = useState('preset:g6');
   const pickBanner = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -145,16 +146,16 @@ function InviteModal({ serverId, onClose }) {
   if (!server) return null;
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(server.invite_code);
+      await navigator.clipboard.writeText(inviteUrl(server.invite_code));
       } catch {
-      // copie impossible : le code reste sélectionnable à l'écran
+      // copie impossible : le lien reste sélectionnable à l'écran
     }
   };
   return (
     <Modal open title={`Inviter sur ${server.name}`} onClose={onClose}>
-      <p className="mb-4 text-sm text-slate-500">Partagez ce code pour que vos amis rejoignent l’espace.</p>
+      <p className="mb-4 text-sm text-slate-500">Partagez ce lien pour que vos amis rejoignent l’espace.</p>
       <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 pl-5">
-        <code className="flex-1 select-all font-mono text-lg tracking-widest text-brand-700">{server.invite_code}</code>
+        <code className="min-w-0 flex-1 select-all truncate font-mono text-base tracking-wide text-slate-900">{inviteShown(server.invite_code)}</code>
         <button className="btn-primary !py-2.5" onClick={copy}>Copier</button>
       </div>
       {server.owner_id === me.id && (
