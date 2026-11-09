@@ -7,6 +7,12 @@ export const ONLINE_WINDOW_MS = 60_000;
 
 const all = (sql, ...p) => db.prepare(sql).all(...p);
 const marks = (ids) => ids.map(() => '?').join(',') || 'NULL';
+// Adresses /api/img/… qui désignent un GIF animé (pour afficher le repère GIF dans le chat).
+const gifUrls = (urls) => {
+  const ids = [...new Set(urls.filter((u) => u && u.startsWith('/api/img/')).map((u) => u.slice(9)))];
+  if (!ids.length) return new Set();
+  return new Set(all(`SELECT id FROM images WHERE mime = 'image/gif' AND id IN (${marks(ids)})`, ...ids).map((r) => `/api/img/${r.id}`));
+};
 
 export function publicUser(u) {
   return {
@@ -160,10 +166,10 @@ export function buildSnapshot(me) {
     })),
     roles: roles.map((r) => ({ ...r, can_manage_channels: r.can_manage_channels })),
     channels: channels.map((c) => ({ id: c.id, server_id: c.server_id, name: c.name, type: c.type, readonly: !!c.readonly })),
-    messages,
+    messages: (() => { const gifs = gifUrls(messages.map((m) => m.image)); return messages.map((m) => ({ ...m, gif: gifs.has(m.image) })); })(),
     friendships: friendships.map((f) => ({ id: f.id, from: f.from_id, to: f.to_id, status: f.status })),
     hiddenDmPeers: [...hiddenSince.keys()],
-    dms: dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, image: d.image || '', created_at: d.created_at, status: d.status })),
+    dms: (() => { const gifs = gifUrls(dms.map((d) => d.image)); return dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, image: d.image || '', gif: gifs.has(d.image), created_at: d.created_at, status: d.status })); })(),
     // Espaces publics (liste « Communauté ») : sans code d'invitation.
     communities: communities.map((c) => ({ ...c, is_member: ids_member.has(c.id) })),
     voice: voice.map((v) => ({ user_id: v.user_id, channel_id: v.channel_id, muted: !!v.muted })),

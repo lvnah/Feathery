@@ -7,7 +7,7 @@ import {
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner } from '../components/ui';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import VoiceScreen from '../components/VoiceScreen';
-import { AttachButton, AttachPreview, MessageImage } from '../components/ChatAttach';
+import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
 import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
@@ -73,6 +73,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
 
   const [text, setText] = useState('');
   const [image, setImage] = useState('');
+  const [gifOpen, setGifOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -242,7 +243,6 @@ export default function ServerView({ serverId, channelId, goHome }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       {/* Barre d'en-tête de l'espace */}
-      {server.banner && <SpaceBanner value={server.banner} className="h-16 shrink-0 rounded-3xl shadow-soft max-lg:hidden" />}
       <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">
         <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu de l’espace" className="ml-auto hidden rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 max-lg:block">
           Menu
@@ -252,6 +252,8 @@ export default function ServerView({ serverId, channelId, goHome }) {
           openMenu(e, [{ label: 'Quitter l’espace', danger: true, onClick: () => { if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); } }]);
         }}>
           <ServerIcon server={server} className="h-12 w-12" />
+          {/* Bannière de l'espace : rectangle arrondi à côté de la photo. */}
+          {server.banner && <SpaceBanner value={server.banner} className="h-12 w-28 shrink-0 rounded-2xl max-lg:hidden" />}
           <div className="min-w-0">
             <p className="truncate text-lg font-extrabold">{server.name}</p>
             <span className="pill !bg-brand-50 !text-brand-700">
@@ -435,7 +437,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                           <RoleBadge user={author} />
                         </div>
                         {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900">{m.content}</p>}
-                        <MessageImage src={m.image} />
+                        <MessageImage src={m.image} gif={m.gif} />
                       </div>
                       <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(m.created_at)}</span>
                       {(isOwner || author.id === me.id) && (
@@ -457,6 +459,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                 <AttachPreview src={image} onRemove={() => setImage('')} />
                 <div className="flex items-center gap-3">
                   <AttachButton onPick={pickImage} disabled={current.readonly && !canManage} />
+                  <GifButton onClick={() => setGifOpen(true)} disabled={current.readonly && !canManage} />
                   <input
                     className="field !rounded-2xl !bg-slate-100 !py-3.5"
                     disabled={current.readonly && !canManage}
@@ -471,6 +474,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                 </div>
                 <ErrorLine>{error}</ErrorLine>
               </form>
+              {gifOpen && <GifPicker onPick={setImage} onClose={() => setGifOpen(false)} />}
             </>
           ) : (
             <EmptyState icon="hash" title="Aucun salon texte">Demandez à un membre disposant de la permission « gérer les salons » d’en créer un.</EmptyState>
