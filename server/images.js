@@ -10,14 +10,26 @@ db.exec(`CREATE TABLE IF NOT EXISTS images (
   created_at INTEGER NOT NULL
 )`);
 
+// Signatures binaires attendues (en-tête du fichier) pour chaque format accepté.
+function signatureMatches(mime, data) {
+  if (mime === 'image/png') return data.length > 8 && data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (mime === 'image/jpeg') return data.length > 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff;
+  if (mime === 'image/webp') return data.length > 12 && data.subarray(0, 4).toString('latin1') === 'RIFF' && data.subarray(8, 12).toString('latin1') === 'WEBP';
+  if (mime === 'image/gif') return data.length > 6 && ['GIF87a', 'GIF89a'].includes(data.subarray(0, 6).toString('latin1'));
+  return false;
+}
+
 const DATA_URL = /^data:(image\/(?:png|jpeg|webp|gif));base64,([A-Za-z0-9+/=]+)$/;
 
 // Enregistre une image encodée en data URL ; renvoie son URL, ou null si le format n'est pas reconnu.
 export function storeImage(dataUrl) {
   const m = DATA_URL.exec(String(dataUrl ?? ''));
   if (!m) return null;
+  const data = Buffer.from(m[2], 'base64');
+  // Contrôle du contenu réel : la signature du fichier doit correspondre au format annoncé.
+  if (!signatureMatches(m[1], data)) return null;
   const id = randomBytes(12).toString('hex');
-  db.prepare('INSERT INTO images (id, mime, data, created_at) VALUES (?, ?, ?, ?)').run(id, m[1], Buffer.from(m[2], 'base64'), Date.now());
+  db.prepare('INSERT INTO images (id, mime, data, created_at) VALUES (?, ?, ?, ?)').run(id, m[1], data, Date.now());
   return `/api/img/${id}`;
 }
 

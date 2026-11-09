@@ -45,6 +45,11 @@ const messageBody = (p, maxText) => {
   const raw = String(p.image ?? '').trim();
   if (!raw && !content) fail('Message vide.');
   if (!raw) return { content, image: '' };
+  // GIF choisi dans le sélecteur (déjà importé sur le serveur) : on référence l'image existante.
+  if (/^\/api\/img\/[a-f0-9]{24}$/.test(raw)) {
+    if (!one('SELECT 1 FROM images WHERE id = ?', raw.slice(9))) fail('Image introuvable.', 404);
+    return { content, image: raw };
+  }
   if (!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(raw)) fail('Format non pris en charge : PNG, JPEG, WebP ou GIF.');
   if (raw.length > CHAT_IMAGE_MAX) fail('Image trop lourde (2 Mo maximum).');
   return { content, image: storeImage(raw) ?? fail('Image illisible.') };
@@ -807,9 +812,9 @@ const handlers = {
 };
 
 export function runAction(name, me, payload) {
-  const handler = handlers[name];
-  if (!handler) fail('Action inconnue.', 404);
-  return handler(me, payload ?? {});
+  // Seules les actions déclarées ci-dessus sont accessibles (pas les propriétés héritées comme « constructor »).
+  if (!Object.hasOwn(handlers, name)) fail('Action inconnue.', 404);
+  return handlers[name](me, payload ?? {});
 }
 
 // Authentification (hors session).

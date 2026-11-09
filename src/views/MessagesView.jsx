@@ -6,7 +6,7 @@ import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
-import { AttachButton, AttachPreview, MessageImage } from '../components/ChatAttach';
+import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
 
 // Messages privés. Une personne qui n'est pas amie peut écrire : cela crée une demande de message.
@@ -17,6 +17,7 @@ export default function MessagesView({ withId }) {
   const unread = unreadCount(s);
   const [text, setText] = useState('');
   const [image, setImage] = useState('');
+  const [gifOpen, setGifOpen] = useState(false);
   const [pending, setPending] = useState(null);
   const [error, setError] = useState('');
   const listRef = useRef(null);
@@ -188,7 +189,7 @@ export default function MessagesView({ withId }) {
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>
                       {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{d.content}</p>}
-                      <MessageImage src={d.image} />
+                      <MessageImage src={d.image} gif={d.gif} />
                     </div>
                     <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(d.created_at)}</span>
                     {d.from === me.id && (
@@ -206,6 +207,7 @@ export default function MessagesView({ withId }) {
                 <AttachPreview src={image} onRemove={() => setImage('')} />
                 <div className="flex items-center gap-3">
                   <AttachButton onPick={pickImage} />
+                  <GifButton onClick={() => setGifOpen(true)} />
                   <input className="field !rounded-2xl !bg-slate-100 !py-3.5" placeholder={hasRequestOnly || !thread.length ? `Écrire à ${partner.pseudo} (demande de message)` : `Envoyer un message à ${partner.pseudo}...`} value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} />
                   <button type="submit" disabled={!text.trim() && !image} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white transition hover:bg-brand-600 disabled:opacity-40">
                     <Icon name="send" className="h-5 w-5" />
@@ -214,6 +216,7 @@ export default function MessagesView({ withId }) {
                 <ErrorLine>{error}</ErrorLine>
               </form>
             )}
+            {gifOpen && <GifPicker onPick={setImage} onClose={() => setGifOpen(false)} />}
           </>
         ) : (
           <EmptyState icon="message" title="Sélectionnez une conversation">Vos messages privés apparaîtront ici.</EmptyState>

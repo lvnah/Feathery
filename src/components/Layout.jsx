@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { getMe, serversOf, logout, messagesBadge, serverUnread, unreadCount, leaveServer, setStatus, myVoice } from '../lib/store';
-import { STATUS_LABEL, STATUS_DOT, statusKey, statusLabel, statusColor, nameStyle } from '../lib/util';
+import { getMe, logout, messagesBadge, unreadCount, setStatus } from '../lib/store';
+import { STATUS_LABEL, statusLabel, statusColor, nameStyle } from '../lib/util';
 import { run } from '../views/ServerView';
-import { useStore, useUI, Avatar, CountBadge, Icon, ServerIcon } from './ui';
+import { useStore, useUI, Avatar, CountBadge, Icon } from './ui';
 import InstallButton from './InstallButton';
 import Logo from './Logo';
 
@@ -18,31 +18,15 @@ const NAV = [
 // Sidebar flottante (desktop) ou tiroir coulissant (mobile) + zone de contenu.
 export default function Layout({ view, children }) {
   const s = useStore();
-  const { go, openModal, openMenu, toast } = useUI();
+  const { go, openMenu, toast } = useUI();
   const me = getMe(s);
   const [drawer, setDrawer] = useState(false);
-  const servers = serversOf(s, me.id);
   const nav = NAV;
 
   const navigate = (v) => {
     go(v);
     setDrawer(false);
   };
-  // Clic droit sur un espace : quitter (sauf si l'on en est le propriétaire).
-  const leaveMenu = (e, srv) => {
-    if (srv.owner_id === me.id) {
-      e.preventDefault();
-      return;
-    }
-    openMenu(e, [{
-      label: 'Quitter l’espace',
-      danger: true,
-      onClick: () => {
-        if (window.confirm(`Quitter « ${srv.name} » ?`)) run(toast, () => leaveServer(srv.id)).then((ok) => ok && goHome());
-      },
-    }]);
-  };
-  const goHome = () => navigate({ name: 'home' });
   const statusMenuItems = ['online', 'game', 'away', 'offline'].map((k) => ({
     label: STATUS_LABEL[k],
     checked: me.status === k,
@@ -83,35 +67,7 @@ export default function Layout({ view, children }) {
           ))}
         </nav>
 
-        <div className="flex min-h-[10rem] flex-1 flex-col gap-3">
-          <div className="flex shrink-0 flex-col gap-2">
-            <button onClick={() => { setDrawer(false); openModal('join'); }} className="btn-ghost !py-2.5">
-              Rejoindre un espace
-            </button>
-          </div>
-          <div className="thin-scroll flex min-h-0 flex-col gap-1 overflow-y-auto">
-            {servers.map((srv) => (
-              <button
-                key={srv.id}
-                onClick={() => navigate({ name: 'server', serverId: srv.id })}
-                onContextMenu={(e) => leaveMenu(e, srv)}
-                className={`flex items-center gap-3 rounded-2xl border px-2.5 py-2.5 text-left shadow-soft transition ${
-                  view.name === 'server' && view.serverId === srv.id ? 'border-brand-300 bg-brand-50' : 'border-slate-100 bg-surface hover:border-brand-200'
-                }`}
-              >
-                <ServerIcon server={srv} className="h-11 w-11 shrink-0" />
-                <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-slate-900">{srv.name}</span>
-                {myVoice(s)?.serverId === srv.id && (
-                  <span title="Vous êtes en vocal ici" className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
-                    <Icon name={myVoice(s).muted ? 'micOff' : 'mic'} className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                <span className="ml-auto"><CountBadge n={serverUnread(s, srv.id)} /></span>
-              </button>
-            ))}
-            {servers.length === 0 && <p className="px-2 text-xs text-slate-400">Aucun espace pour le moment.</p>}
-          </div>
-        </div>
+        <div className="flex-1" />
 
         <InstallButton className="mb-3 shrink-0" />
         <div className="flex shrink-0 items-center gap-3 border-t border-slate-100 pt-4">

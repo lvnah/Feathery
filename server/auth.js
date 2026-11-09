@@ -1,5 +1,5 @@
 // Mots de passe (scrypt) et sessions par jeton Bearer stockées en base.
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { db } from './db.js';
 
 const SESSION_MS = 30 * 24 * 3600 * 1000;
@@ -17,14 +17,22 @@ export function verifyPassword(password, stored) {
   return timingSafeEqual(actual, expected);
 }
 
+// Le jeton n'est jamais gardé en clair : seule son empreinte est stockée (une fuite de la base ne donne pas de session).
+export const digestToken = (token) => createHash('sha256').update(String(token)).digest('hex');
+
 export function createSession(userId) {
   const token = randomBytes(32).toString('base64url');
-  db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, userId, Date.now() + SESSION_MS);
+  db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(digestToken(token), userId, Date.now() + SESSION_MS);
   return token;
 }
 
 export function deleteSession(token) {
-  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+  if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(digestToken(token));
+}
+
+// Déconnecte les autres appareils d'un membre (après changement de mot de passe), en gardant éventuellement la session courante.
+export function revokeSessions(userId, keepToken = null) {
+  db.prepare('DELETE FROM sessions WHERE user_id = ? AND token <> ?').run(userId, keepToken ? digestToken(keepToken) : '');
 }
 
 export function userFromToken(token) {
@@ -34,6 +42,6 @@ export function userFromToken(token) {
       `SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ? AND s.expires_at > ?`,
     )
-    .get(token, Date.now());
+    .get(digestToken(token), Date.now());
   return row || null;
 }
