@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { acceptDM, deleteDM, hideConversation, friendsOf, friendshipBetween, getMe, getUser, markDmRead, refuseDM, respondFriendRequest, sendDM, sendFriendRequest, unreadCount } from '../lib/store';
-import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon } from '../components/ui';
-import { formatStamp, isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
+import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, TimeAgo } from '../components/ui';
+import { isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
+import { MentionText } from '../components/Mentions';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { run } from './ServerView';
@@ -50,9 +51,19 @@ export default function MessagesView({ withId }) {
     if (partner && unreadHere > 0) markDmRead(partner.id).catch(() => {});
   }, [partner?.id, unreadHere]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [thread.length, withId]);
+  // Même règle que dans les espaces : on reste en bas seulement si l'on y était déjà.
+  const stuck = useRef(true);
+  const stick = () => {
+    const el = listRef.current;
+    if (el && stuck.current) el.scrollTop = el.scrollHeight;
+  };
+  const onListScroll = () => {
+    const el = listRef.current;
+    if (el) stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
+  useEffect(() => { stuck.current = true; stick(); }, [withId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { stick(); }, [thread.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pseudos = new Set(s.users.map((u) => u.pseudo.toLowerCase()));
 
   const pickImage = async (file) => {
     try {
@@ -69,6 +80,7 @@ export default function MessagesView({ withId }) {
     setError('');
     const content = text;
     const picture = image;
+    stuck.current = true;
     setText('');
     setImage('');
     try {
@@ -172,7 +184,7 @@ export default function MessagesView({ withId }) {
               </div>
             )}
 
-            <div ref={listRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
+            <div ref={listRef} onScroll={onListScroll} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
               {thread.length === 0 && <p className="m-auto text-sm text-slate-500">Écrivez à {partner.pseudo} pour commencer.</p>}
               {thread.map((d) => {
                 const author = d.from === me.id ? me : partner;
@@ -188,10 +200,10 @@ export default function MessagesView({ withId }) {
                         <RoleBadge user={author} />
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>
-                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">{d.content}</p>}
-                      <MessageImage src={d.image} gif={d.gif} />
+                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"><MentionText text={d.content} names={pseudos} meName={me.pseudo} /></p>}
+                      <MessageImage src={d.image} gif={d.gif} onLoad={stick} />
                     </div>
-                    <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(d.created_at)}</span>
+                    <TimeAgo ts={d.created_at} className="hidden shrink-0 whitespace-nowrap text-xs text-slate-400 sm:block" />
                     {d.from === me.id && (
                       <button type="button" onClick={() => setPending({ title: 'Supprimer ce message ?', message: 'Le message sera supprimé pour les deux personnes.', label: 'Supprimer le message', action: () => deleteDM(d.id) })} aria-label="Supprimer le message" className="shrink-0 rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600">
                         <Icon name="trash" className="h-4 w-4" />

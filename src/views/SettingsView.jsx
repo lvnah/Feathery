@@ -101,8 +101,8 @@ function AudioCard() {
   );
 }
 
-// Informations personnelles : adresse e-mail et mot de passe (l'ancien est toujours demandé).
-function PersonalInfo({ me, toast }) {
+// Informations personnelles, une partie à la fois : adresse e-mail, ou mot de passe (l'ancien est toujours demandé).
+function PersonalInfo({ me, toast, part }) {
   const st = me.settings || {};
   const [newEmail, setNewEmail] = useState('');
   const [emailPwd, setEmailPwd] = useState('');
@@ -123,8 +123,21 @@ function PersonalInfo({ me, toast }) {
     const ok = await run(toast, () => changePassword(oldPwd, newPwd), 'Mot de passe modifié');
     if (ok) { setOldPwd(''); setNewPwd(''); setConfirmPwd(''); }
   };
+  if (part === 'password') {
+    return (
+      <Card title="Mot de passe">
+        <form onSubmit={doPassword} className="flex flex-col gap-3">
+          <input type="password" className="field" placeholder="Ancien mot de passe" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} autoComplete="current-password" />
+          <input type="password" className="field" placeholder="Nouveau mot de passe (8 caractères minimum)" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} autoComplete="new-password" />
+          <input type="password" className="field" placeholder="Confirmer le nouveau mot de passe" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} autoComplete="new-password" />
+          <button type="submit" className="btn-ghost self-start" disabled={!oldPwd || newPwd.length < 8 || !confirmPwd}>Changer le mot de passe</button>
+        </form>
+        <ErrorLine>{error}</ErrorLine>
+      </Card>
+    );
+  }
   return (
-    <Card title="Informations personnelles">
+    <Card title="Adresse e-mail">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm text-slate-500">Adresse e-mail :</span>
         <span className="font-bold text-slate-900">{st.email || 'aucune'}</span>
@@ -140,59 +153,96 @@ function PersonalInfo({ me, toast }) {
         <input type="password" className="field" placeholder="Mot de passe actuel" value={emailPwd} onChange={(e) => setEmailPwd(e.target.value)} autoComplete="current-password" />
         <button type="submit" className="btn-ghost self-start" disabled={!newEmail.includes('@') || !emailPwd}>Changer l’adresse</button>
       </form>
-      <form onSubmit={doPassword} className="flex flex-col gap-3 border-t border-slate-100 pt-4">
-        <p className="text-sm font-bold text-slate-900">Changer de mot de passe</p>
-        <input type="password" className="field" placeholder="Ancien mot de passe" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} autoComplete="current-password" />
-        <input type="password" className="field" placeholder="Nouveau mot de passe (8 caractères minimum)" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} autoComplete="new-password" />
-        <input type="password" className="field" placeholder="Confirmer le nouveau mot de passe" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} autoComplete="new-password" />
-        <button type="submit" className="btn-ghost self-start" disabled={!oldPwd || newPwd.length < 8 || !confirmPwd}>Changer le mot de passe</button>
-      </form>
       <ErrorLine>{error}</ErrorLine>
     </Card>
   );
 }
 
+const SECTIONS = [
+  ['messages', 'Messages privés'],
+  ['friends', 'Demandes d’amis'],
+  ['audio', 'Micro et son'],
+  ['email', 'Adresse e-mail'],
+  ['password', 'Mot de passe'],
+  ['account', 'Compte'],
+];
+
+// Une seule section à la fois : la page ne défile pas, on change de section (liste à gauche ou menu sur téléphone).
 export default function SettingsView() {
   const s = useStore();
   const { toast } = useUI();
   const me = getMe(s);
   const st = me.settings || {};
   const set = (patch) => updateSettings(patch).catch((err) => toast(err.message));
+  const [section, setSection] = useState('messages');
+
+  let content = null;
+  if (section === 'messages') {
+    content = (
+      <Card title="Messages privés">
+        <Choice
+          value={st.dmOpen ? 'open' : 'request'}
+          onChange={(v) => set({ dmOpen: v === 'open' })}
+          options={[
+            ['request', 'Demande de message', 'Une personne qui n’est pas amie doit d’abord envoyer une demande, que vous acceptez.'],
+            ['open', 'Tout le monde peut m’écrire', 'Les messages arrivent directement, sans demande, même sans être amis.'],
+          ]}
+        />
+      </Card>
+    );
+  } else if (section === 'friends') {
+    content = (
+      <Card title="Demandes d’amis">
+        <Choice
+          value={st.acceptFriendRequests === false ? 'refuse' : 'accept'}
+          onChange={(v) => set({ acceptFriendRequests: v === 'accept' })}
+          options={[
+            ['accept', 'Accepter les demandes d’ami', 'Les personnes peuvent vous envoyer une demande d’ami.'],
+            ['refuse', 'Refuser les demandes d’ami', 'Personne ne peut vous envoyer de demande d’ami.'],
+          ]}
+        />
+      </Card>
+    );
+  } else if (section === 'audio') {
+    content = <AudioCard />;
+  } else if (section === 'email') {
+    content = <PersonalInfo me={me} toast={toast} part="email" />;
+  } else if (section === 'password') {
+    content = <PersonalInfo me={me} toast={toast} part="password" />;
+  } else {
+    content = (
+      <Card title="Compte">
+        <button type="button" onClick={() => logout()} className="btn-ghost self-start">Se déconnecter</button>
+      </Card>
+    );
+  }
 
   return (
-    <div className="thin-scroll flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <PageBanner icon="settings" title="Paramètres" subtitle="Gérez l’application : apparence, messages et demandes." />
-
-        <Card title="Messages privés">
-          <Choice
-            value={st.dmOpen ? 'open' : 'request'}
-            onChange={(v) => set({ dmOpen: v === 'open' })}
-            options={[
-              ['request', 'Demande de message', 'Une personne qui n’est pas amie doit d’abord envoyer une demande, que vous acceptez.'],
-              ['open', 'Tout le monde peut m’écrire', 'Les messages arrivent directement, sans demande, même sans être amis.'],
-            ]}
-          />
-        </Card>
-
-        <Card title="Demandes d’amis">
-          <Choice
-            value={st.acceptFriendRequests === false ? 'refuse' : 'accept'}
-            onChange={(v) => set({ acceptFriendRequests: v === 'accept' })}
-            options={[
-              ['accept', 'Accepter les demandes d’ami', 'Les personnes peuvent vous envoyer une demande d’ami.'],
-              ['refuse', 'Refuser les demandes d’ami', 'Personne ne peut vous envoyer de demande d’ami.'],
-            ]}
-          />
-        </Card>
-
-        <AudioCard />
-
-        <PersonalInfo me={me} toast={toast} />
-
-        <Card title="Compte">
-          <button type="button" onClick={() => logout()} className="btn-ghost self-start">Se déconnecter</button>
-        </Card>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden">
+      <PageBanner icon="settings" title="Paramètres" subtitle="Gérez l’application : messages, demandes, audio et compte." />
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <select
+          aria-label="Section des paramètres"
+          value={section}
+          onChange={(e) => setSection(e.target.value)}
+          className="field shrink-0 lg:hidden"
+        >
+          {SECTIONS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+        </select>
+        <nav aria-label="Sections des paramètres" className="panel hidden shrink-0 flex-col gap-1 p-2 lg:flex lg:w-60">
+          {SECTIONS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-current={section === key ? 'page' : undefined}
+              onClick={() => setSection(key)}
+              className={`rounded-2xl px-4 py-2.5 text-left text-sm font-bold transition ${section === key ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden lg:max-w-2xl">{content}</div>
       </div>
     </div>
   );

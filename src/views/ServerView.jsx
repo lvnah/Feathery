@@ -4,7 +4,7 @@ import {
   leaveVoice, membersOf, membership, roleColorOf, roleNameOf, roleRank, rolesOf, sendFriendRequest, sendMessage,
   assignRole, deleteMessage,
 } from '../lib/store';
-import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner } from '../components/ui';
+import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner, TimeAgo } from '../components/ui';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import VoiceScreen from '../components/VoiceScreen';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
@@ -12,7 +12,8 @@ import { chatImageFromFile } from '../lib/images';
 import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
-import { formatStamp, isOnline } from '../lib/util';
+import { isOnline } from '../lib/util';
+import { MentionText, MentionSuggest, mentionQuery } from '../components/Mentions';
 
 // Exécute une action async et affiche le résultat dans un toast.
 export async function run(toast, fn, okMessage) {
@@ -85,10 +86,24 @@ export default function ServerView({ serverId, channelId, goHome }) {
     if (current && unreadHere > 0) markChannelRead(current.id).catch(() => {});
   }, [current?.id, unreadHere]); // eslint-disable-line react-hooks/exhaustive-deps
   const listRef = useRef(null);
-
-  useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages.length, current?.id]);
+  // Le fil reste collé au bas tant qu'on y est : une photo qui finit de charger ne fait pas sauter la vue,
+  // et on ne force pas le défilement quand on relit les anciens messages.
+  const stuck = useRef(true);
+  const stick = () => {
+    const el = listRef.current;
+    if (el && stuck.current) el.scrollTop = el.scrollHeight;
+  };
+  const onListScroll = () => {
+    const el = listRef.current;
+    if (el) stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
+  useEffect(() => { stuck.current = true; stick(); }, [current?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { stick(); }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pseudos = new Set(s.users.map((u) => u.pseudo.toLowerCase()));
+  const mention = mentionQuery(text);
+  const mentionCandidates = mention === null
+    ? []
+    : membersOf(s, serverId).filter((u) => u.id !== me.id && u.pseudo.toLowerCase().startsWith(mention.toLowerCase())).slice(0, 6);
 
   // Rejoindre un vocal ouvre directement la vue « En vocal » (téléphone).
   // Calculé avant tout retour anticipé : l'ordre des hooks doit rester identique à chaque rendu.
@@ -146,6 +161,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!current || (!text.trim() && !image)) return;
+    stuck.current = true; // mon propre message : on le voit en entier
     // Le message part tout de suite : le champ est vidé avant la réponse du serveur.
     const content = text;
     const picture = image;
@@ -417,7 +433,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
           )}
           {current ? (
             <>
-              <div ref={listRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
+              <div ref={listRef} onScroll={onListScroll} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
                 {messages.length === 0 && <p className="m-auto text-sm text-slate-500">Aucun message dans #{current.name}. Lancez la discussion !</p>}
                 {messages.map((m) => {
                   const author = getUser(s, m.user_id);
@@ -436,10 +452,10 @@ export default function ServerView({ serverId, channelId, goHome }) {
                           </button>
                           <RoleBadge user={author} />
                         </div>
-                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900">{m.content}</p>}
-                        <MessageImage src={m.image} gif={m.gif} />
+                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"><MentionText text={m.content} names={pseudos} meName={me.pseudo} /></p>}
+                        <MessageImage src={m.image} gif={m.gif} onLoad={stick} />
                       </div>
-                      <span className="hidden shrink-0 text-xs text-slate-400 sm:block">{formatStamp(m.created_at)}</span>
+                      <TimeAgo ts={m.created_at} className="hidden shrink-0 whitespace-nowrap text-xs text-slate-400 sm:block" />
                       {(isOwner || author.id === me.id) && (
                         <button
                           title="Supprimer le message"
@@ -460,14 +476,19 @@ export default function ServerView({ serverId, channelId, goHome }) {
                 <div className="flex items-center gap-3">
                   <AttachButton onPick={pickImage} disabled={current.readonly && !canManage} />
                   <GifButton onClick={() => setGifOpen(true)} disabled={current.readonly && !canManage} />
-                  <input
-                    className="field !rounded-2xl !bg-slate-100 !py-3.5"
-                    disabled={current.readonly && !canManage}
-                    placeholder={current.readonly && !canManage ? 'Salon en lecture seule' : `Partager quelque chose dans #${current.name}...`}
-                    value={text}
-                    maxLength={2000}
-                    onChange={(e) => setText(e.target.value)}
-                  />
+                  <div className="relative min-w-0 flex-1">
+                    {mentionCandidates.length > 0 && (
+                      <MentionSuggest candidates={mentionCandidates} onPick={(pseudo) => setText(text.replace(/@[\p{L}\p{N}_.-]{0,24}$/u, `@${pseudo} `))} />
+                    )}
+                    <input
+                      className="field !rounded-2xl !bg-slate-100 !py-3.5"
+                      disabled={current.readonly && !canManage}
+                      placeholder={current.readonly && !canManage ? 'Salon en lecture seule' : `Partager quelque chose dans #${current.name}...`}
+                      value={text}
+                      maxLength={2000}
+                      onChange={(e) => setText(e.target.value)}
+                    />
+                  </div>
                   <button type="submit" disabled={(!text.trim() && !image) || (current.readonly && !canManage)} aria-label="Envoyer" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(120,120,128,0.8)] transition hover:bg-brand-600 disabled:opacity-40">
                     <Icon name="send" className="h-5 w-5" />
                   </button>
