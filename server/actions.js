@@ -23,6 +23,15 @@ const all = (sql, ...p) => db.prepare(sql).all(...p);
 const run = (sql, ...p) => db.prepare(sql).run(...p);
 const newId = (prefix) => `${prefix}_${randomBytes(8).toString('hex')}`;
 const now = () => Date.now();
+// Vrai si une image (data URL ou /api/img/<id>) est un GIF animé.
+const isGifRef = (value) => {
+  const v = String(value || '');
+  if (v.startsWith('data:image/gif')) return true;
+  const m = v.match(/^\/api\/img\/([\w-]+)$/);
+  if (!m) return false;
+  const row = one('SELECT mime FROM images WHERE id = ?', m[1]);
+  return row?.mime === 'image/gif';
+};
 const text = (value, min, max, message) => {
   const t = String(value ?? '').trim();
   if (t.length < min || t.length > max) fail(message);
@@ -669,15 +678,20 @@ const handlers = {
     return all('SELECT id, pseudo, tag, email, is_plus, is_admin, created_at, last_activity, status FROM users ORDER BY created_at DESC');
   },
 
-  // Retirer PLUS remet aussi la bannière de base (dégradé vert).
+  // Retirer PLUS : pseudo, photo et bannières GIF (animées) sont retirés, le reste est remis en base.
   adminSetPlus(me, p) {
     requireAdmin(me);
     if (p.value) {
       run('UPDATE users SET is_plus = 1 WHERE id = ?', p.userId);
-    } else {
-      // Retirer PLUS : pseudo remis en couleur de base, bannières animées des espaces retirées.
-      run("UPDATE users SET is_plus = 0, banner_type = 'gradient', banner_value = '0', name_color = '' WHERE id = ?", p.userId);
-      run("UPDATE servers SET banner = '' WHERE owner_id = ? AND banner LIKE 'data:image/gif%'", p.userId);
+      return;
+    }
+    const user = one('SELECT avatar, banner_type, banner_value FROM users WHERE id = ?', p.userId);
+    if (!user) return;
+    run("UPDATE users SET is_plus = 0, banner_type = 'gradient', banner_value = '0', name_color = '' WHERE id = ?", p.userId);
+    if (isGifRef(user.avatar)) run("UPDATE users SET avatar = '' WHERE id = ?", p.userId);
+    // Les bannières d'espace animées (GIF) du membre sont remplacées par la bannière de base.
+    for (const s of all('SELECT id, banner FROM servers WHERE owner_id = ?', p.userId)) {
+      if (isGifRef(s.banner)) run("UPDATE servers SET banner = '' WHERE id = ?", s.id);
     }
   },
 
