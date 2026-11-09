@@ -108,11 +108,13 @@ const imageData = (value, kind, isPlus = false) => {
 db.exec(`CREATE TABLE IF NOT EXISTS dm_hidden (user_id TEXT NOT NULL, peer_id TEXT NOT NULL, since INTEGER NOT NULL, PRIMARY KEY (user_id, peer_id))`);
 
 // Bannières préréglées, réservées aux membres PLUS (dégradés animés faits pour Feathery).
-const PLUS_PRESETS = ['aurora', 'ember', 'tide', 'nocturne', 'meadow'];
+const PLUS_PRESETS = ['aurora', 'ember', 'tide', 'nocturne', 'meadow', 'silver'];
+// Bannière d'espace par défaut (création sans bannière) : l'argent fixe.
+const DEFAULT_ESPACE_BANNER = 'preset:g6';
 
-// Bannière d'espace : image téléchargée, ou bannière de base 'preset:gN' (N de 0 à 5) pour tout le monde,
+// Bannière d'espace : image téléchargée, ou bannière de base 'preset:gN' (N de 0 à 6) pour tout le monde,
 // ou une bannière préréglée PLUS ('preset:aurora' …) ; 'preset:feathery' est réservée aux administrateurs.
-const ESPACE_PRESET = /^preset:(g[0-5]|aurora|ember|tide|nocturne|meadow|feathery)$/;
+const ESPACE_PRESET = /^preset:(g[0-6]|aurora|ember|tide|nocturne|meadow|silver|feathery)$/;
 const espaceBannerValue = (value, me) => {
   const v = String(value ?? '').trim();
   if (!v) return '';
@@ -123,6 +125,24 @@ const espaceBannerValue = (value, me) => {
   if (key[0] !== 'g' && key !== 'feathery' && !me.is_plus && !me.is_admin) fail('Ces bannières sont réservées aux membres PLUS.', 403);
   return v;
 };
+
+// Retire les GIF animés d'un membre qui n'est pas PLUS : photo, bannière de profil, bannières d'espace.
+function purgeGifs(userId) {
+  const user = one('SELECT id, avatar, banner_type, banner_value FROM users WHERE id = ?', userId);
+  if (!user) return;
+  if (isGifRef(user.avatar)) run("UPDATE users SET avatar = '' WHERE id = ?", userId);
+  if (user.banner_type === 'image' && isGifRef(user.banner_value)) {
+    run("UPDATE users SET banner_type = 'gradient', banner_value = '0' WHERE id = ?", userId);
+  }
+  for (const s of all('SELECT id, banner FROM servers WHERE owner_id = ?', userId)) {
+    if (isGifRef(s.banner)) run("UPDATE servers SET banner = '' WHERE id = ?", s.id);
+  }
+}
+
+// Contrôle de tous les membres sans PLUS : appelé au démarrage du serveur.
+export function purgeNonPlusGifs() {
+  for (const u of all('SELECT id FROM users WHERE is_plus = 0')) purgeGifs(u.id);
+}
 
 const handlers = {
   changePassword: (me, p) => changePassword(me, p),
@@ -213,7 +233,7 @@ const handlers = {
         bannerValue = p.banner.key;
       } else {
         bannerType = 'gradient';
-        bannerValue = String(Math.max(0, Math.min(5, Number(p.banner.index) || 0)));
+        bannerValue = String(Math.max(0, Math.min(6, Number(p.banner.index) || 0)));
       }
     }
     run(
@@ -345,7 +365,7 @@ const handlers = {
     return transaction(() => {
       run(
         'INSERT INTO servers (id, name, icon, is_public, owner_id, invite_code, created_at, banner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        id, name, icon, p.isPublic === false ? 0 : 1, me.id, code, now(), espaceBannerValue(p.banner, me),
+        id, name, icon, p.isPublic === false ? 0 : 1, me.id, code, now(), espaceBannerValue(p.banner, me) || DEFAULT_ESPACE_BANNER,
       );
       run('INSERT INTO memberships (server_id, user_id, joined_at) VALUES (?, ?, ?)', id, me.id, now());
       run('INSERT INTO channels (id, server_id, name, type, created_at) VALUES (?, ?, ?, ?, ?)', newId('c'), id, 'général', 'text', now());
@@ -678,21 +698,15 @@ const handlers = {
     return all('SELECT id, pseudo, tag, email, is_plus, is_admin, created_at, last_activity, status FROM users ORDER BY created_at DESC');
   },
 
-  // Retirer PLUS : pseudo, photo et bannières GIF (animées) sont retirés, le reste est remis en base.
+  // Retirer PLUS : pseudo et bannière de profil remis en base, puis GIF (photo, bannières) retirés.
   adminSetPlus(me, p) {
     requireAdmin(me);
     if (p.value) {
       run('UPDATE users SET is_plus = 1 WHERE id = ?', p.userId);
       return;
     }
-    const user = one('SELECT avatar, banner_type, banner_value FROM users WHERE id = ?', p.userId);
-    if (!user) return;
     run("UPDATE users SET is_plus = 0, banner_type = 'gradient', banner_value = '0', name_color = '' WHERE id = ?", p.userId);
-    if (isGifRef(user.avatar)) run("UPDATE users SET avatar = '' WHERE id = ?", p.userId);
-    // Les bannières d'espace animées (GIF) du membre sont remplacées par la bannière de base.
-    for (const s of all('SELECT id, banner FROM servers WHERE owner_id = ?', p.userId)) {
-      if (isGifRef(s.banner)) run("UPDATE servers SET banner = '' WHERE id = ?", s.id);
-    }
+    purgeGifs(p.userId);
   },
 
   adminDeleteUser(me, p) {

@@ -36,15 +36,24 @@ export function statusKey(user) {
 export const isOnline = (user) => statusKey(user) !== 'offline';
 
 export const STATUS_LABEL = { online: 'En ligne', game: 'En game', away: 'Absent', offline: 'Hors ligne' };
-export const STATUS_DOT = { online: 'bg-brand-500', game: 'bg-violet-500', away: 'bg-amber-400', offline: 'bg-slate-300' };
+export const STATUS_DOT = { online: 'bg-emerald-500', game: 'bg-violet-500', away: 'bg-amber-400', offline: 'bg-slate-300' };
 export const statusLabel = (user) => STATUS_LABEL[statusKey(user)];
-// Couleur du texte de statut (lisible sur fond sombre).
-export const STATUS_TEXT = { online: '#e4e4e7', game: '#7c3aed', away: '#b45309', offline: '#64748b' };
+// Couleur du texte de statut (lisible sur fond sombre) ; « En ligne » reste vert.
+export const STATUS_TEXT = { online: '#4ade80', game: '#a78bfa', away: '#fbbf24', offline: '#64748b' };
+
+// Lien d'invitation affiché et copié : feathery.fr/invite/CODE.
+export const INVITE_HOST = 'feathery.fr';
+export const inviteShown = (code) => `${INVITE_HOST}/invite/${code}`;
+export const inviteUrl = (code) => `https://${INVITE_HOST}/invite/${code}`;
 export const statusColor = (user) => STATUS_TEXT[statusKey(user)];
 
 export function fullName(user) {
   return user ? `${user.pseudo}#${user.tag}` : '';
 }
+
+// Argent : même dégradé que « Feathery » sur l'accueil. Le logo reste gris foncé pour rester lisible.
+const SILVER_CSS = 'linear-gradient(100deg,#ffffff 0%,#9ca3af 25%,#ffffff 50%,#9ca3af 75%,#ffffff 100%)';
+const SILVER_LOGO_CSS = 'linear-gradient(100deg,#27272a 0%,#71717a 25%,#27272a 50%,#71717a 75%,#27272a 100%)';
 
 // Bannières préréglées réservées aux membres PLUS : dégradés animés, créés pour Feathery.
 export const PLUS_BANNER_PRESETS = {
@@ -53,6 +62,8 @@ export const PLUS_BANNER_PRESETS = {
   tide: { label: 'Marée', css: 'linear-gradient(120deg,#0c4a6e,#38bdf8,#e0f2fe,#0c4a6e)' },
   nocturne: { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
   meadow: { label: 'Prairie', css: 'linear-gradient(120deg,#1f1f23,#65a30d,#fef08a,#1f1f23)' },
+  // Argent animé (PLUS) : même reflet que le nom « Feathery » sur l'accueil.
+  silver: { label: 'Argent animé', css: SILVER_CSS, logoCss: SILVER_LOGO_CSS, logoFilter: 'none' },
   // Réservée aux administrateurs : dégradé animé avec le logo de l'application.
   feathery: { label: 'Feathery (admin)', admin: true, logo: true, css: 'linear-gradient(120deg,#09090b,#52525b,#e4e4e7,#09090b)' },
 };
@@ -65,23 +76,26 @@ export const LOGO_CLASSIC = [
   { label: 'Marée', css: 'linear-gradient(120deg,#0c4a6e,#38bdf8,#e0f2fe,#0c4a6e)' },
   { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
   { label: 'Prairie', css: 'linear-gradient(120deg,#1f1f23,#65a30d,#fef08a,#1f1f23)' },
+  // Argent fixe (pour tous) : même dégradé que le titre de l'accueil.
+  { label: 'Argent', css: SILVER_CSS, logoCss: SILVER_LOGO_CSS, logoFilter: 'none' },
 ];
 const presetBackground = (css, animated) => ({
   backgroundImage: css,
   backgroundSize: animated ? '300% 300%' : 'cover',
   ...(animated ? { animation: 'banner-drift 14s ease-in-out infinite' } : {}),
 });
-// Calque du logo : même couleur que la bannière, plus claire pour rester visible.
+// Calque du logo : même couleur que la bannière, plus claire pour rester visible (sauf réglage propre à la bannière).
 export function bannerLogoLayer(user) {
   const b = user?.banner || {};
   if (b.type === 'image' || b.type === 'url') return null;
   const preset = b.type === 'preset' && PLUS_BANNER_PRESETS[b.key];
-  const css = preset ? preset.css : LOGO_CLASSIC[(b.index ?? 0) % LOGO_CLASSIC.length].css;
+  const entry = preset || LOGO_CLASSIC[(b.index ?? 0) % LOGO_CLASSIC.length];
+  const css = entry.logoCss ?? entry.css;
   const animated = !!preset && !!(user?.is_plus || user?.is_admin);
   const mask = `url("${LOGO_URL}")`;
   return {
     ...presetBackground(css, animated),
-    filter: 'brightness(1.9) saturate(1.2)',
+    filter: entry.logoFilter ?? 'brightness(1.9) saturate(1.2)',
     WebkitMaskImage: mask, maskImage: mask,
     WebkitMaskSize: 'auto 60%', maskSize: 'auto 60%',
     WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
@@ -182,6 +196,6 @@ export function espaceBannerUser(value) {
   const v = String(value || '');
   if (!v.startsWith('preset:')) return null;
   const key = v.slice(7);
-  if (/^g[0-5]$/.test(key)) return { banner: { type: 'gradient', index: Number(key.slice(1)) } };
+  if (/^g[0-6]$/.test(key)) return { banner: { type: 'gradient', index: Number(key.slice(1)) } };
   return { banner: { type: 'preset', key } };
 }

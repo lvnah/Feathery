@@ -1,8 +1,8 @@
 import { Fragment, useState } from 'react';
 import { deleteRole, deleteServer, getMe, kickMember, membersOf, membership, rolesOf, assignRole, updateInvite, updateRole, updateServerIcon, createRole } from '../lib/store';
-import { Avatar, ColorDiamonds, ErrorLine, Modal, ServerIcon, useStore, useUI } from './ui';
+import { Avatar, ColorDiamonds, ErrorLine, Modal, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
-import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle } from '../lib/util';
+import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle, inviteShown, inviteUrl } from '../lib/util';
 import { updateServerName, reorderRoles, setServerBanner, setServerVisibility } from '../lib/store';
 import { fullName } from '../lib/util';
 import { ROLE_COLORS } from '../lib/util';
@@ -259,8 +259,8 @@ function InviteTab({ serverId, toast }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-        <code className="select-all font-mono text-lg font-bold tracking-widest text-brand-700">{server.invite_code}</code>
-        <button className="btn-primary !py-2.5" onClick={() => navigator.clipboard?.writeText(server.invite_code)}>Copier</button>
+        <code className="min-w-0 select-all truncate font-mono text-base font-bold tracking-wide text-slate-900">{inviteShown(server.invite_code)}</code>
+        <button className="btn-primary !py-2.5" onClick={() => navigator.clipboard?.writeText(inviteUrl(server.invite_code))}>Copier</button>
       </div>
       {me.is_plus ? (
         <form onSubmit={save} className="flex flex-col gap-3 border-t border-slate-100 pt-6">
@@ -293,15 +293,16 @@ function ManageTab({ serverId, toast, onDeleted }) {
       go({ name: 'home' });
     }
   };
-  const [icon, setIcon] = useState(server.icon || '');
   const [error, setError] = useState('');
+  // L'icône est enregistrée dès qu'elle est choisie, comme la bannière : l'aperçu est celui de l'espace.
   const pick = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
     try {
-      setIcon(await fileToDataUrl(file, ICON_OPTS));
+      const data = await fileToDataUrl(file, ICON_OPTS);
       setError('');
+      await run(toast, () => updateServerIcon(serverId, data), 'Icône mise à jour');
     } catch (err) {
       setError(err.message);
     }
@@ -321,24 +322,17 @@ function ManageTab({ serverId, toast, onDeleted }) {
           <button type="submit" className="btn-primary" disabled={!name.trim() || name === server.name}>Enregistrer</button>
         </div>
       </form>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          await run(toast, () => updateServerIcon(serverId, icon), 'Icône mise à jour');
-        }}
-        className="flex flex-col gap-4 rounded-3xl bg-slate-50 p-5"
-      >
+      <div className="flex flex-col gap-4 rounded-3xl bg-slate-50 p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Icône de l’espace</p>
         <div className="flex items-center gap-4">
-          <ServerIcon icon={icon} server={server} className="h-20 w-20" />
+          <ServerIcon server={server} className="h-20 w-20" />
           <label className="btn-ghost cursor-pointer">
-            Importer une image
+            {server.icon ? 'Changer l’icône' : 'Importer une image'}
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={pick} />
           </label>
-          <button type="submit" className="btn-primary" disabled={!icon}>Enregistrer</button>
         </div>
         <ErrorLine>{error}</ErrorLine>
-      </form>
+      </div>
       <VisibilityForm serverId={serverId} server={server} toast={toast} />
       <BannerForm serverId={serverId} server={server} toast={toast} />
 
@@ -394,12 +388,12 @@ function BannerForm({ serverId, server, toast }) {
   return (
     <div className="flex flex-col gap-4 rounded-3xl bg-slate-50 p-5">
       <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Bannière de l’espace</p>
-      <div
-        className="relative h-28 overflow-hidden rounded-2xl bg-slate-200 bg-cover bg-center"
-        style={server.banner ? { backgroundImage: `url("${server.banner}")` } : undefined}
-      >
-        {!server.banner && <span className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">Aucune bannière</span>}
-      </div>
+      {/* Aperçu de la bannière enregistrée : image ou bannière de base, animée ou non. */}
+      {server.banner ? (
+        <SpaceBanner value={server.banner} className="h-28 rounded-2xl" />
+      ) : (
+        <div className="flex h-28 items-center justify-center rounded-2xl bg-slate-200 text-sm text-slate-500">Aucune bannière</div>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <label className="btn-ghost cursor-pointer">
           {server.banner ? 'Changer la bannière' : 'Importer une bannière'}

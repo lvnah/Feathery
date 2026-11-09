@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { userFromToken } from './auth.js';
 import { buildSnapshot } from './sync.js';
-import { HttpError, changeEmail, changePassword, login, logout, register, runAction, verifyEmailToken } from './actions.js';
+import { HttpError, changeEmail, changePassword, login, logout, purgeNonPlusGifs, register, runAction, verifyEmailToken } from './actions.js';
 import { publicUser } from './sync.js';
 import { db } from './db.js';
 import { getVersion, bumpVersion, onVersion, offVersion } from './version.js';
@@ -27,6 +27,8 @@ const requireAdminToken = (req) => {
   if (!row) throw new HttpError(401, 'Session administrateur expirée, reconnectez-vous.');
 };
 const migrated = migrateInlineImages();
+// Les membres qui ne sont plus PLUS ne gardent aucun GIF animé (photo, bannières).
+purgeNonPlusGifs();
 if (migrated) console.log(`${migrated} image(s) déplacée(s) hors de la synchronisation.`);
 
 const PORT = Number(process.env.PORT || 3001);
