@@ -22,7 +22,7 @@ export default function Layout({ view, children }) {
   const me = getMe(s);
   const [drawer, setDrawer] = useState(false);
   const servers = serversOf(s, me.id);
-  const nav = me.is_admin ? [...NAV, { key: 'admin', label: 'Admin', icon: 'bolt', view: { name: 'admin' } }] : NAV;
+  const nav = NAV;
 
   const navigate = (v) => {
     go(v);

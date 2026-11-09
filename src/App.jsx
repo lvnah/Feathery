@@ -247,16 +247,16 @@ export default function App() {
 
   // Sans session, on revient à l'accueil (connexion). Avec une session, on garde la page demandée (ex. /admin) pendant le chargement.
   useEffect(() => {
-    if (!me && !getToken()) setView({ name: 'home' });
+    if (!me && !getToken() && !window.location.pathname.startsWith('/admin')) setView({ name: 'home' });
   }, [me]);
 
   let content;
-  if (booting && !me) {
+  if (view.name === 'admin') {
+    content = <AdminPanel onExit={goHome} />;
+  } else if (booting && !me) {
     content = <div className="flex min-h-dvh items-center justify-center text-sm text-slate-500">Chargement…</div>;
   } else if (!me) {
     content = <Login toast={toast} />;
-  } else if (view.name === 'admin') {
-    content = <AdminPanel onExit={goHome} />;
   } else {
     content = (
       <Layout view={view}>

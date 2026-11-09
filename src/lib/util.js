@@ -5,7 +5,7 @@ export const OWNER_COLOR = '#d97706';
 export const ONLINE_WINDOW_MS = 15_000;
 
 export const ROLE_COLORS = [
-  '#a16207', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6',
+  '#a16207', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#a1a1aa', '#71717a', '#52525b',
   '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
   '#f43f5e', '#94a3b8', '#f8fafc',
 ];
@@ -54,7 +54,7 @@ export const PLUS_BANNER_PRESETS = {
   nocturne: { label: 'Nocturne', css: 'linear-gradient(120deg,#0f172a,#312e81,#be185d,#0f172a)' },
   meadow: { label: 'Prairie', css: 'linear-gradient(120deg,#1f1f23,#65a30d,#fef08a,#1f1f23)' },
   // Réservée aux administrateurs : dégradé animé avec le logo de l'application.
-  feathery: { label: 'Feathery (admin)', admin: true, logo: true, css: 'linear-gradient(120deg,#0f0f12,#047857,#34d399,#0f0f12)' },
+  feathery: { label: 'Feathery (admin)', admin: true, logo: true, css: 'linear-gradient(120deg,#09090b,#52525b,#e4e4e7,#09090b)' },
 };
 
 // Bannières « logo » : dégradés avec le logo de l'appli. Classiques (fixes) pour tous, animées pour les PLUS.

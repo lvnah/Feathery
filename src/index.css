@@ -53,7 +53,7 @@
     @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(0,116,84,0.7)] hover:bg-brand-600;
+    @apply btn bg-brand-500 text-white shadow-[0_10px_24px_-10px_rgba(0,0,0,0.5)] hover:bg-brand-600;
   }
   .btn-soft {
     @apply btn bg-brand-400 text-brand-900 hover:bg-brand-300;
@@ -240,3 +240,16 @@ html[data-theme="dark"] .bg-brand-600 { background-color: #27272a !important; }
 html[data-theme="dark"] .border-brand-500 { border-color: #71717a !important; }
 html[data-theme="dark"] .bg-brand-500 { background-color: #e4e4e7 !important; }
 html[data-theme="dark"] .bg-brand-500.text-white, html[data-theme="dark"] .text-white.bg-brand-500 { color: #09090b !important; }
+
+/* Dernières reprises en noir et gris : boutons, panneaux et textes sur fond sombre. */
+html[data-theme="dark"] .\!bg-surface, html[data-theme="dark"] .\!bg-white { background-color: #111418 !important; }
+html[data-theme="dark"] .btn-ghost { background-color: #1f1f23 !important; color: #f4f4f5 !important; }
+html[data-theme="dark"] .btn-ghost:hover { background-color: #2a2a30 !important; }
+html[data-theme="dark"] .btn-soft { background-color: #e4e4e7 !important; color: #09090b !important; }
+html[data-theme="dark"] .btn-soft:hover { background-color: #ffffff !important; }
+html[data-theme="dark"] .btn-primary { background-color: #e4e4e7 !important; color: #09090b !important; }
+html[data-theme="dark"] .btn-primary:hover { background-color: #ffffff !important; }
+html[data-theme="dark"] .btn-danger { color: #fecaca !important; }
+/* Bouton de suppression lisible en sombre (sans couleur de marque). */
+html[data-theme="dark"] .btn-danger { background-color: #1f1f23 !important; color: #fca5a5 !important; }
+html[data-theme="dark"] .btn-danger:hover { background-color: #2a2a30 !important; }
