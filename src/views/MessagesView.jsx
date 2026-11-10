@@ -9,13 +9,13 @@ import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
-import { callOf, joinCall } from '../lib/store';
+import { blockUser, callOf, joinCall } from '../lib/store';
 import { unlockAudio, useSpeaking } from '../lib/voice';
 
 // Messages privés. Une personne qui n'est pas amie peut écrire : cela crée une demande de message.
 export default function MessagesView({ withId }) {
   const s = useStore();
-  const { go, toast, openUser, openModal } = useUI();
+  const { go, toast, openUser, openModal, openMenu } = useUI();
   const me = getMe(s);
   const unread = unreadCount(s);
   const [text, setText] = useState('');
@@ -66,7 +66,20 @@ export default function MessagesView({ withId }) {
   };
   useEffect(() => { stuck.current = true; stick(); }, [withId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { stick(); }, [thread.length]); // eslint-disable-line react-hooks/exhaustive-deps
-  const pseudos = new Map(s.users.map((u) => [u.pseudo.toLowerCase(), u]));
+  // Mentions : seulement moi et la personne avec qui je discute.
+  const pseudos = new Map([me, partner].filter(Boolean).map((u) => [u.pseudo.toLowerCase(), u]));
+  // Clic droit sur une personne : voir le profil, supprimer la conversation, bloquer.
+  const personMenu = (e, user) => {
+    if (!user || user.id === me.id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openMenu(e, [
+      { label: 'Voir le profil', onClick: () => openUser(user.id) },
+      { separator: true },
+      { label: 'Supprimer la conversation', danger: true, onClick: () => setPending({ title: `Supprimer la conversation avec ${user.pseudo} ?`, message: 'Elle disparaît de votre liste. Votre correspondant garde son historique.', label: 'Supprimer la conversation', action: () => hideConversation(user.id) }) },
+      { label: 'Bloquer', danger: true, onClick: () => setPending({ title: `Bloquer ${user.pseudo} ?`, message: 'Vous ne verrez plus ses messages ni ses appels, et il ne verra plus les vôtres.', label: 'Bloquer', action: () => run(toast, () => blockUser(user.id), 'Membre bloqué') }) },
+    ]);
+  };
 
   const pickImage = async (file) => {
     try {
@@ -118,7 +131,7 @@ export default function MessagesView({ withId }) {
         {conversations.length === 0 && requests.length === 0 && <p className="px-2 text-sm text-slate-500">Aucune conversation active.</p>}
         <div className="flex flex-col gap-2">
           {conversations.map(({ user, last }) => (
-            <div key={user.id} role="button" tabIndex={0} onClick={() => go({ name: 'messages', withId: user.id })} className={`flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 text-left transition hover:bg-slate-200 ${withId === user.id ? 'border-slate-500 bg-slate-200' : 'border-slate-300 bg-surface'}`}>
+            <div key={user.id} role="button" tabIndex={0} onContextMenu={(e) => personMenu(e, user)} onClick={() => go({ name: 'messages', withId: user.id })} className={`flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 text-left transition hover:bg-slate-200 ${withId === user.id ? 'border-slate-500 bg-slate-200' : 'border-slate-300 bg-surface'}`}>
               <button type="button" onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="shrink-0 rounded-full" aria-label={`Profil de ${user.pseudo}`}>
                 <Avatar user={user} size="md" showStatus />
               </button>
@@ -196,12 +209,12 @@ export default function MessagesView({ withId }) {
                 return (
                   // Chaque message est une cellule distincte, comme dans les espaces.
                   <div key={d.id} className="flex items-start gap-3 rounded-2xl border-2 border-slate-300 bg-slate-100 px-4 py-3 shadow-soft">
-                    <button type="button" onClick={() => openUser(author.id)} className="shrink-0 rounded-full" aria-label={`Profil de ${author.pseudo}`}>
+                    <button type="button" onClick={() => openUser(author.id)} onContextMenu={(e) => personMenu(e, author)} className="shrink-0 rounded-full" aria-label={`Profil de ${author.pseudo}`}>
                       <Avatar user={author} size="md" />
                     </button>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span onClick={() => openUser(author.id)} className="cursor-pointer font-bold text-slate-900 hover:underline" style={nameStyle(author)}>{author.pseudo}</span>
+                        <span onClick={() => openUser(author.id)} onContextMenu={(e) => personMenu(e, author)} className="cursor-pointer font-bold text-slate-900 hover:underline" style={nameStyle(author)}>{author.pseudo}</span>
                         <RoleBadge user={author} />
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>

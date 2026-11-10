@@ -273,6 +273,8 @@ export const callOf = (s) => {
 };
 export const createRole = (serverId, role) => act('createRole', { serverId, ...role });
 export const kickMember = (serverId, userId) => act('kickMember', { serverId, userId });
+export const blockUser = (targetId) => act('blockUser', { targetId });
+export const unblockUser = (targetId) => act('unblockUser', { targetId });
 export const reportUser = (targetId, reason, serverId = null) => act('reportUser', { targetId, reason, serverId });
 export const assignRole = (serverId, userId, roleId) => act('assignRole', { serverId, userId, roleId });
 export const updateRole = (serverId, roleId, role) => act('updateRole', { serverId, roleId, ...role });

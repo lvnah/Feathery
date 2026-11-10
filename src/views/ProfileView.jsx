@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, updateProfile } from '../lib/store';
+import { blockUser, getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, updateProfile } from '../lib/store';
 import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '../components/ui';
 import { BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
@@ -271,6 +271,7 @@ function PublicProfile({ user, goBack }) {
                   <Icon name="flag" className="h-4 w-4" />
                   Signaler
                 </button>
+                <button className="btn-ghost" onClick={() => run(toast, () => blockUser(user.id), 'Membre bloqué')}>Bloquer</button>
               </div>
             )}
           </div>
@@ -311,7 +312,7 @@ function GamesBlock({ user, editable }) {
         <span className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {games.map((g) => (
             <span key={g.game} className="flex flex-col rounded-xl bg-surface px-3 py-2 shadow-soft">
-              <span className="truncate text-sm font-extrabold">{g.game}</span>
+              <span className="min-w-0 break-words text-sm font-extrabold">{g.game}</span>
             </span>
           ))}
         </span>

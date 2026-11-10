@@ -252,8 +252,8 @@ async function handleApi(req, res, path) {
     const [namePart = '', tagPart = ''] = raw.split('#').map((x) => x.trim().replace(/[%_]/g, ''));
     if (namePart.length < 2) return send(res, 200, { users: [] });
     const rows = db
-      .prepare('SELECT * FROM users WHERE id <> ? AND pseudo LIKE ? AND tag LIKE ? ORDER BY pseudo LIMIT 12')
-      .all(me.id, `%${namePart}%`, `%${tagPart}%`);
+      .prepare("SELECT * FROM users WHERE id <> ? AND pseudo LIKE ? AND tag LIKE ? AND id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = ? UNION SELECT blocker_id FROM blocks WHERE blocked_id = ?) ORDER BY pseudo LIMIT 12")
+      .all(me.id, `%${namePart}%`, `%${tagPart}%`, me.id, me.id);
     return send(res, 200, { users: rows.map(publicUser) });
   }
   if (req.method === 'GET' && path === '/api/sync') {

@@ -1,4 +1,4 @@
-import { changeEmail, changePassword, getMe, logout, updateSettings } from '../lib/store';
+import { changeEmail, changePassword, getMe, logout, unblockUser, updateSettings } from '../lib/store';
 import { useEffect, useState } from 'react';
 import { ErrorLine, useStore, useUI } from '../components/ui';
 import { canChooseOutput, getAudioPrefs, grantMicAccess, listAudioDevices, setAudioPrefs, subscribeAudioDevices } from '../lib/voice';
@@ -196,6 +196,7 @@ const SECTIONS = [
   ['audio', 'Micro et son'],
   ['email', 'Adresse e-mail'],
   ['password', 'Mot de passe'],
+  ['blocked', 'Membres bloqués'],
   ['account', 'Compte'],
 ];
 
@@ -241,6 +242,19 @@ export default function SettingsView() {
     content = <PersonalInfo me={me} toast={toast} part="email" />;
   } else if (section === 'password') {
     content = <PersonalInfo me={me} toast={toast} part="password" />;
+  } else if (section === 'blocked') {
+    const blocked = st.blocked || [];
+    content = (
+      <Card title="Membres bloqués">
+        {blocked.length === 0 && <p className="text-sm text-slate-500">Aucun membre bloqué.</p>}
+        {blocked.map((u) => (
+          <div key={u.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 p-3">
+            <span className="min-w-0 break-all text-sm font-bold text-slate-900">{u.pseudo}<span className="font-normal text-slate-400"> #{u.tag}</span></span>
+            <button type="button" className="btn-ghost shrink-0 !py-2" onClick={() => run(toast, () => unblockUser(u.id), 'Membre débloqué')}>Débloquer</button>
+          </div>
+        ))}
+      </Card>
+    );
   } else {
     content = (
       <Card title="Compte">
