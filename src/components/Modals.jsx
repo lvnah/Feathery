@@ -72,8 +72,13 @@ function CreateServerModal({ onClose }) {
           <input className="field" maxLength={16} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </label>
         <div className="flex flex-col gap-2"><Label>Icône (facultatif)</Label>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <ServerIcon icon={icon} server={{ id: name || 'new', name }} className="h-14 w-14" />
+            {LOGO_CLASSIC.map((theme, index) => (
+              <button key={theme.label} type="button" title={theme.label} aria-label={`Icône ${theme.label}`} onClick={() => setIcon(`preset:i${index}`)} className={`rounded-full p-0.5 ${icon === `preset:i${index}` ? 'ring-2 ring-brand-500' : ''}`}>
+                <ServerIcon icon={`preset:i${index}`} className="h-10 w-10" />
+              </button>
+            ))}
             <label className="btn-ghost cursor-pointer">
               Importer une image
               <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { try { setIcon(await fileToDataUrl(f, ICON_OPTS)); } catch (err) { setError(err.message); } } }} />

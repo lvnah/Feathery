@@ -120,20 +120,44 @@ export function AttachPreview({ src, onRemove }) {
   );
 }
 
-// Photo ou GIF d'un message : chargée à la demande, cliquable pour l'ouvrir en grand.
-// Le repère GIF s'affiche sur les GIF animés.
+// Photo ou GIF d'un message : un clic ouvre la photo dans le lecteur intégré (sans quitter la page).
 export function MessageImage({ src, gif = false, onLoad }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
   if (!src) return null;
   const animated = gif || src.startsWith('data:image/gif');
   return (
-    <a href={src} target="_blank" rel="noreferrer" className="relative mt-2 block w-fit max-w-full">
-      <img src={src} onLoad={onLoad} alt={animated ? 'GIF' : 'Image envoyée'} loading="lazy" decoding="async" className="max-h-72 max-w-full rounded-2xl object-contain" />
-      {animated && (
-        <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider text-white">
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
-          GIF
-        </span>
-      )}
-    </a>
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label={animated ? 'Ouvrir le GIF' : 'Ouvrir la photo'} className="relative mt-2 block w-fit max-w-full overflow-hidden rounded-2xl">
+        <img src={src} onLoad={onLoad} alt={animated ? 'GIF' : 'Image envoyée'} loading="lazy" decoding="async" className="max-h-72 max-w-full rounded-2xl object-contain" />
+        {animated && (
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider text-white">
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-white" />
+            GIF
+          </span>
+        )}
+      </button>
+      {open && <ImageViewer src={src} alt={animated ? 'GIF' : 'Photo'} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+// Lecteur intégré : plein écran, fermeture par la croix, Échap ou un clic à côté de la photo.
+export function ImageViewer({ src, alt = 'Photo', onClose }) {
+  return (
+    <div role="dialog" aria-modal="true" aria-label={alt} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4" onClick={onClose}>
+      <img src={src} alt={alt} onClick={(e) => e.stopPropagation()} className="max-h-full max-w-full rounded-2xl object-contain shadow-soft" />
+      <button type="button" onClick={onClose} aria-label="Fermer" className="absolute right-4 top-4 rounded-full bg-white/15 p-2.5 text-white hover:bg-white/25">
+        <Icon name="x" className="h-5 w-5" />
+      </button>
+      <a href={src} download onClick={(e) => e.stopPropagation()} className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/15 px-4 py-2 text-xs font-bold text-white hover:bg-white/25">
+        Enregistrer l’image
+      </a>
+    </div>
   );
 }

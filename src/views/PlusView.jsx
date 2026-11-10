@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { getMe } from '../lib/store';
 import { useStore, Icon } from '../components/ui';
 import PlusBadge from '../components/PlusBadge';
@@ -13,9 +14,16 @@ const BENEFITS = [
   'Jusqu’à 5 espaces créés (3 pour les membres classiques)',
 ];
 
-function PriceCard({ title, price, unit, note, highlight = false }) {
+// Carte d'une formule : on la choisit en cliquant dessus.
+function PriceCard({ title, price, unit, note, highlight = false, selected, onSelect }) {
   return (
-    <div className={`panel flex flex-col gap-2 p-4 md:gap-3 md:p-6 ${highlight ? 'ring-2 ring-brand-300' : ''}`}>
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={`panel flex flex-col gap-2 p-4 text-left transition md:gap-3 md:p-6 ${selected ? 'ring-2 ring-brand-400' : 'hover:bg-slate-100'}`}
+    >
       <div className="flex items-center justify-between">
         <p className="font-bold text-slate-900">{title}</p>
         {highlight && <span className="pill !bg-brand-100 !px-3 !py-1 !text-xs !font-bold !text-brand-700">Économie</span>}
@@ -25,13 +33,14 @@ function PriceCard({ title, price, unit, note, highlight = false }) {
         <span className="text-xs font-semibold text-slate-500 md:text-sm">{unit}</span>
       </p>
       <p className="text-xs text-slate-600 md:text-sm">{note}</p>
-    </div>
+    </button>
   );
 }
 
 export default function PlusView() {
   const s = useStore();
   const me = getMe(s);
+  const [plan, setPlan] = useState('year');
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden md:gap-6">
       <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-3 md:gap-6">
@@ -46,9 +55,9 @@ export default function PlusView() {
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-3 md:gap-4">
-          <PriceCard title="Mensuel" price="0,99 €" unit="par mois" note="Sans engagement, résiliable à tout moment." />
-          <PriceCard title="Annuel" price="10,99 €" unit="par an" note="Soit 0,92 € par mois, une réduction sur l’abonnement mensuel." highlight />
+        <section role="radiogroup" aria-label="Formule" className="grid grid-cols-2 gap-3 md:gap-4">
+          <PriceCard title="Mensuel" price="0,99 €" unit="par mois" note="Sans engagement, résiliable à tout moment." selected={plan === 'month'} onSelect={() => setPlan('month')} />
+          <PriceCard title="Annuel" price="10,99 €" unit="par an" note="Soit 0,92 € par mois, une réduction sur l’abonnement mensuel." highlight selected={plan === 'year'} onSelect={() => setPlan('year')} />
         </section>
 
         <section className="panel p-4 md:p-8">
@@ -70,7 +79,9 @@ export default function PlusView() {
             <p className="font-bold text-brand-700">Vous êtes déjà membre PLUS. Merci pour votre soutien !</p>
           ) : (
             <>
-              <p className="text-sm text-slate-600">Le paiement en ligne n’est pas encore disponible.</p>
+              <p className="text-sm text-slate-600">
+                Formule {plan === 'year' ? 'annuelle (10,99 € par an)' : 'mensuelle (0,99 € par mois)'} sélectionnée. Le paiement en ligne n’est pas encore disponible.
+              </p>
               <button type="button" disabled className="btn-primary self-start md:self-auto">Bientôt disponible</button>
             </>
           )}

@@ -13,7 +13,7 @@ import { chatImageFromFile } from '../lib/images';
 // Messages privés. Une personne qui n'est pas amie peut écrire : cela crée une demande de message.
 export default function MessagesView({ withId }) {
   const s = useStore();
-  const { go, toast, openUser } = useUI();
+  const { go, toast, openUser, openModal } = useUI();
   const me = getMe(s);
   const unread = unreadCount(s);
   const [text, setText] = useState('');
@@ -63,7 +63,7 @@ export default function MessagesView({ withId }) {
   };
   useEffect(() => { stuck.current = true; stick(); }, [withId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { stick(); }, [thread.length]); // eslint-disable-line react-hooks/exhaustive-deps
-  const pseudos = new Set(s.users.map((u) => u.pseudo.toLowerCase()));
+  const pseudos = new Map(s.users.map((u) => [u.pseudo.toLowerCase(), u]));
 
   const pickImage = async (file) => {
     try {
@@ -200,7 +200,7 @@ export default function MessagesView({ withId }) {
                         <RoleBadge user={author} />
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>
-                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"><MentionText text={d.content} names={pseudos} meName={me.pseudo} /></p>}
+                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"><MentionText text={d.content} users={pseudos} meName={me.pseudo} onOpen={(id) => openModal('mini', { userId: id })} /></p>}
                       <MessageImage src={d.image} gif={d.gif} onLoad={stick} />
                     </div>
                     <TimeAgo ts={d.created_at} className="hidden shrink-0 whitespace-nowrap text-xs text-slate-400 sm:block" />

@@ -4,19 +4,25 @@ import { Fragment } from 'react';
 const MENTION_SPLIT = /(@[\p{L}\p{N}_.-]{2,24})/u;
 
 // Texte d'un message avec les mentions en gras ; la mention de soi-même ressort davantage.
-export function MentionText({ text, names, meName = '' }) {
+// Un clic sur une mention ouvre le mini-profil du membre. « users » : Map pseudo (minuscules) -> membre.
+export function MentionText({ text, users, meName = '', onOpen }) {
   const me = meName.toLowerCase();
   return (
     <>
       {String(text ?? '').split(MENTION_SPLIT).map((part, i) => {
         if (i % 2 === 0) return <Fragment key={i}>{part}</Fragment>;
-        const name = part.slice(1).toLowerCase();
-        if (!names.has(name)) return <Fragment key={i}>{part}</Fragment>;
-        const mine = name === me;
+        const member = users.get(part.slice(1).toLowerCase());
+        if (!member) return <Fragment key={i}>{part}</Fragment>;
+        const mine = member.pseudo.toLowerCase() === me;
         return (
-          <span key={i} className={`rounded-md px-1 font-extrabold ${mine ? 'bg-slate-900 text-white' : 'bg-slate-300/70 text-slate-900'}`}>
+          <button
+            key={i}
+            type="button"
+            onClick={() => onOpen?.(member.id)}
+            className={`rounded-md px-1 font-extrabold hover:underline ${mine ? 'bg-slate-900 text-white' : 'bg-slate-300/70 text-slate-900'}`}
+          >
             {part}
-          </span>
+          </button>
         );
       })}
     </>

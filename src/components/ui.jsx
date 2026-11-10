@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore } 
 import { useNow, timeAgo } from '../lib/clock';
 import { formatStamp } from '../lib/util';
 import { subscribe, getState } from '../lib/store';
-import { avatarGradient, bannerLogoLayer, bannerStyle, espaceBannerUser, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
+import { avatarGradient, bannerLogoLayer, bannerStyle, espaceBannerUser, presetIconIndex, ROLE_COLORS, statusKey, STATUS_DOT, statusLabel, statusColor } from '../lib/util';
 import Logo from './Logo';
 
 export const UIContext = createContext(null);
@@ -88,6 +88,16 @@ export function Avatar({ user, size = 'md', showStatus = false, className = '' }
 // Icône d'espace : image importée, sinon le logo de base sur une couleur propre à l'espace.
 export function ServerIcon({ server, icon, className = 'h-10 w-10' }) {
   const src = icon !== undefined ? icon : server?.icon;
+  const preset = presetIconIndex(src);
+  if (preset !== null) {
+    // Icône prédéfinie : dégradé du thème de la bannière N, avec le logo.
+    const b = { banner: { type: 'gradient', index: preset } };
+    return (
+      <span className={`${className} relative shrink-0 overflow-hidden rounded-full`} style={bannerStyle(b)}>
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={bannerLogoLayer(b)} />
+      </span>
+    );
+  }
   if (src) return <img src={src} alt="" className={`${className} shrink-0 rounded-full object-cover`} />;
   return (
     <span className={`${className} flex shrink-0 items-center justify-center rounded-full bg-slate-100`}>

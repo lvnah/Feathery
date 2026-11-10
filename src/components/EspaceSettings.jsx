@@ -331,6 +331,14 @@ function ManageTab({ serverId, toast, onDeleted }) {
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={pick} />
           </label>
         </div>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Icônes prédéfinies</p>
+        <div className="flex flex-wrap gap-2">
+          {LOGO_CLASSIC.map((theme, index) => (
+            <button key={theme.label} type="button" title={theme.label} aria-label={`Icône ${theme.label}`} onClick={() => run(toast, () => updateServerIcon(serverId, `preset:i${index}`), 'Icône mise à jour')} className={`rounded-full p-0.5 ${server.icon === `preset:i${index}` ? 'ring-2 ring-brand-500' : ''}`}>
+              <ServerIcon icon={`preset:i${index}`} className="h-12 w-12" />
+            </button>
+          ))}
+        </div>
         <ErrorLine>{error}</ErrorLine>
       </div>
       <VisibilityForm serverId={serverId} server={server} toast={toast} />
