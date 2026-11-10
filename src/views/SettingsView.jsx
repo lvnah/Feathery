@@ -1,7 +1,7 @@
 import { changeEmail, changePassword, getMe, logout, updateSettings } from '../lib/store';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ErrorLine, useStore, useUI } from '../components/ui';
-import { canChooseOutput, getAudioPrefs, listAudioDevices, setAudioPrefs } from '../lib/voice';
+import { canChooseOutput, getAudioPrefs, grantMicAccess, listAudioDevices, setAudioPrefs, subscribeAudioDevices } from '../lib/voice';
 import PageBanner from '../components/PageBanner';
 import { run } from './ServerView';
 
@@ -54,41 +54,73 @@ function Toggle({ label, hint, checked, onChange }) {
   );
 }
 
-// Micro et haut-parleur utilisés pendant les vocaux.
+// Micro et haut-parleur utilisés pendant les vocaux. La liste se met à jour toute seule (branchement, débranchement).
 function AudioCard() {
   const [devices, setDevices] = useState(null);
   const [prefs, setPrefs] = useState(getAudioPrefs());
   const [error, setError] = useState('');
-  const load = async () => {
-    setError('');
+  const [busy, setBusy] = useState(false);
+  const scan = async () => {
     try {
       setDevices(await listAudioDevices());
-    } catch (err) {
-      setError('Autorisez le micro pour voir vos appareils.');
+    } catch {
+      setDevices({ inputs: [], outputs: [], named: false });
     }
   };
+  useEffect(() => {
+    scan();
+    return subscribeAudioDevices(scan);
+  }, []);
   const choose = (patch) => {
     setAudioPrefs(patch);
     setPrefs(getAudioPrefs());
   };
+  const allow = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await grantMicAccess();
+      await scan();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const inputs = devices?.inputs ?? [];
   const select = (label, list, key) => (
     <label className="flex flex-col gap-2 text-sm font-bold text-slate-700">
       {label}
       <select className="field" value={prefs[key] || ''} onChange={(e) => choose({ [key]: e.target.value })}>
         <option value="">Par défaut</option>
-        {list.map((d) => (
-          <option key={d.deviceId} value={d.deviceId}>{d.label || `Appareil ${d.deviceId.slice(0, 6)}`}</option>
+        {list.map((d, i) => (
+          <option key={d.deviceId} value={d.deviceId}>{d.label || `Appareil ${i + 1}`}</option>
         ))}
       </select>
     </label>
   );
   return (
     <Card title="Micro et haut-parleur">
-      {!devices ? (
-        <button type="button" onClick={load} className="btn-ghost self-start">Afficher mes appareils</button>
+      {devices === null ? (
+        <p className="text-sm text-slate-500">Recherche des appareils…</p>
+      ) : inputs.length === 0 ? (
+        <p className="rounded-2xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+          Aucun micro détecté pour l’instant. Branchez-le : la liste se mettra à jour toute seule. Si le micro est branché, vérifiez qu’il n’est pas utilisé par une autre application.
+        </p>
       ) : (
+        <p className="text-sm font-semibold text-brand-700">
+          {inputs.length === 1 ? '1 micro détecté' : `${inputs.length} micros détectés`}
+          {!devices.named && ' (autorisez le micro pour voir son nom)'}
+        </p>
+      )}
+      {devices && !devices.named && (
+        <button type="button" onClick={allow} disabled={busy} className="btn-ghost self-start">
+          {busy ? 'Autorisation…' : 'Autoriser le micro pour voir les noms'}
+        </button>
+      )}
+      {inputs.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {select('Micro (entrée)', devices.inputs, 'input')}
+          {select('Micro (entrée)', inputs, 'input')}
           {canChooseOutput() ? (
             select('Haut-parleur (sortie)', devices.outputs, 'output')
           ) : (

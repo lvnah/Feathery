@@ -3,6 +3,7 @@ import { getMe, joinPublicServer } from '../lib/store';
 import { useStore, useUI, Modal, ServerIcon, EmptyState } from '../components/ui';
 import PageBanner from '../components/PageBanner';
 import SpaceCard from '../components/SpaceCard';
+import SpaceHero from '../components/SpaceHero';
 import { formatStamp } from '../lib/util';
 import { run } from './ServerView';
 import { fullName } from '../lib/util';
@@ -49,11 +50,8 @@ export default function CommunityView() {
         return (
           <Modal open title="" onClose={() => setSelected(null)} width="max-w-md">
             <div className="flex flex-col items-center gap-4 text-center">
-              <ServerIcon server={c} className="h-24 w-24" />
-              <div>
-                <p className="text-xl font-extrabold">{c.name}</p>
-                <p className="text-sm text-slate-500">Créé par {c.owner_pseudo} · {formatStamp(c.created_at).slice(0, 10)}</p>
-              </div>
+              <SpaceHero server={c} className="h-36 w-full" />
+              <p className="text-sm text-slate-500">Créé par {c.owner_pseudo} · {formatStamp(c.created_at).slice(0, 10)}</p>
               <div className="grid w-full grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xl font-extrabold">{c.members}</p>
