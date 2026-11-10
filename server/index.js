@@ -14,11 +14,16 @@ import { ensureAdmin } from './seed.js';
 import { getImage, migrateInlineImages } from './images.js';
 import { clientIp, hit, securityHeaders } from './security.js';
 import { importGif, searchGifs } from './gifs.js';
+import { iceServersFor } from './ice.js';
 
 ensureAdmin();
-// Une place de vocal se libère quand le membre ne donne plus signe de vie (onglet fermé, téléphone en veille).
+// Une place de vocal se libère seulement quand le membre ne donne plus signe de vie depuis longtemps
+// (téléphone verrouillé, réseau coupé) : une simple pause de l'onglet ne fait pas sortir du vocal.
+const VOICE_GRACE_MS = 120_000;
 setInterval(() => {
-  db.prepare('DELETE FROM voice_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(Date.now() - 60_000);
+  const cutoff = Date.now() - VOICE_GRACE_MS;
+  db.prepare('DELETE FROM voice_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(cutoff);
+  db.prepare('DELETE FROM call_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(cutoff);
 }, 15_000).unref();
 db.prepare("UPDATE users SET name_color = '' WHERE is_admin = 0 AND name_color IN ('#dc2626', '#ef4444', '#be123c', 'rainbow-red')").run();
 // Panneau d'administration : accès séparé des comptes. Login = ADMIN_LOGIN (admin par défaut), mot de passe = ADMIN_PASSWORD du serveur.
@@ -61,12 +66,13 @@ function send(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-// Passe l'utilisateur hors ligne tout de suite (au lieu d'attendre 45 s), et prévient les autres clients.
+// Déconnexion volontaire : hors ligne tout de suite, on quitte le vocal et les appels.
 function setOffline(token) {
   const user = userFromToken(token || null);
   if (!user) return;
   db.prepare('UPDATE users SET last_activity = 0 WHERE id = ?').run(user.id);
-  db.prepare('DELETE FROM voice_connections WHERE user_id = ?').run(user.id); // fermer la page = on quitte le vocal
+  db.prepare('DELETE FROM voice_connections WHERE user_id = ?').run(user.id);
+  db.prepare('DELETE FROM call_connections WHERE user_id = ?').run(user.id);
   bumpVersion();
 }
 
@@ -142,10 +148,10 @@ async function handleApi(req, res, path) {
     logout(bearer(req));
     return send(res, 200, { ok: true });
   }
-  // Fermeture de la page (sendBeacon ne peut pas envoyer d'en-tête : le jeton est dans le corps).
+  // Fermeture de la page : ne change rien. Un onglet fermé ou mis en veille sur téléphone ne doit pas faire
+  // sortir du vocal ; la présence retombe toute seule quand les battements s'arrêtent.
   if (req.method === 'POST' && path === '/api/presence/leave') {
-    const body = await readJson(req);
-    setOffline(String(body.token ?? ''));
+    await readJson(req).catch(() => ({}));
     return send(res, 200, { ok: true });
   }
   // Aperçu d'un lien d'invitation (sans connexion) : nom, bannière, propriétaire, nombre de membres.
@@ -260,9 +266,12 @@ async function handleApi(req, res, path) {
   if (req.method === 'POST' && path === '/api/voice/signal') {
     const me = requireUser(req);
     const body = await readJson(req);
-    const mine = db.prepare('SELECT channel_id FROM voice_connections WHERE user_id = ?').get(me.id);
-    const theirs = db.prepare('SELECT channel_id FROM voice_connections WHERE user_id = ?').get(String(body.toId ?? ''));
-    if (!mine || !theirs || mine.channel_id !== theirs.channel_id) throw new HttpError(403, 'Pas dans le même salon vocal.');
+    // Même salon (espace ou appel privé) : sinon refusé.
+    const roomOf = (id) => db.prepare('SELECT channel_id AS room FROM voice_connections WHERE user_id = ?').get(id)?.room
+      ?? db.prepare('SELECT room FROM call_connections WHERE user_id = ?').get(id)?.room ?? null;
+    const mine = roomOf(me.id);
+    const theirs = roomOf(String(body.toId ?? ''));
+    if (!mine || mine !== theirs) throw new HttpError(403, 'Pas dans le même salon vocal.');
     if (!['offer', 'answer', 'ice'].includes(body.kind)) throw new HttpError(400, 'Signal inconnu.');
     const payload = JSON.stringify(body.payload ?? null);
     if (payload.length > 20000) throw new HttpError(413, 'Signal trop volumineux.');
@@ -270,6 +279,11 @@ async function handleApi(req, res, path) {
     db.prepare('DELETE FROM voice_signals WHERE created_at < ?').run(now - 60_000);
     db.prepare('INSERT INTO voice_signals (to_id, from_id, kind, payload, created_at) VALUES (?, ?, ?, ?, ?)').run(String(body.toId), me.id, body.kind, payload, now);
     return send(res, 200, { ok: true });
+  }
+  // Serveurs de relais pour la connexion vocale (propres à ce membre, temporaires).
+  if (req.method === 'GET' && path === '/api/voice/ice') {
+    const me = requireUser(req);
+    return send(res, 200, { iceServers: iceServersFor(me.id) });
   }
   if (req.method === 'GET' && path === '/api/voice/signals') {
     const me = requireUser(req);

@@ -1,7 +1,9 @@
 import { Avatar, Icon } from './ui';
+import { useSpeaking } from '../lib/voice';
 
 // Vue vocale plein écran (téléphone) : qui est là, micro, quitter. Le chat reste accessible via « Retour au chat ».
 export default function VoiceScreen({ channelName, users, isMuted, voiceMuted, onToggleMute, onLeave, onClose, selfId }) {
+  const speaking = useSpeaking();
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-surface lg:hidden" role="dialog" aria-modal="true" aria-label="Vocal">
       <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -19,11 +21,13 @@ export default function VoiceScreen({ channelName, users, isMuted, voiceMuted, o
           const muted = u.id === selfId ? isMuted : voiceMuted(u.id);
           return (
             <div key={u.id} className="flex flex-col items-center gap-2 rounded-3xl border border-slate-100 bg-surface p-4 shadow-soft">
-              <Avatar user={u} size="lg" showStatus />
+              <span className={`rounded-full transition ${speaking.has(u.id) && !(u.id === selfId ? isMuted : voiceMuted(u.id)) ? 'ring-4 ring-white shadow-[0_0_18px_rgba(255,255,255,0.7)]' : ''}`}>
+                <Avatar user={u} size="lg" showStatus />
+              </span>
               <p className="w-full truncate text-center text-sm font-bold text-slate-900">{u.pseudo}{u.id === selfId ? ' (vous)' : ''}</p>
               <span className={`flex items-center gap-1 text-xs font-semibold ${muted ? 'text-red-600' : 'text-brand-700'}`}>
                 <Icon name={muted ? 'micOff' : 'mic'} className="h-3.5 w-3.5" />
-                {muted ? 'Micro coupé' : 'Parle'}
+                {muted ? 'Micro coupé' : speaking.has(u.id) ? 'Parle' : 'Silencieux'}
               </span>
             </div>
           );

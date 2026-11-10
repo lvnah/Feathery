@@ -37,6 +37,9 @@ const text = (value, min, max, message) => {
   if (t.length < min || t.length > max) fail(message);
   return t;
 };
+// Salon d'un appel privé entre deux membres (même format côté navigateur).
+export const callRoom = (a, b) => `call:${[a, b].sort().join('|')}`;
+
 // Corps d'un message (texte et/ou pièce jointe). Une photo ou un GIF (data URL, 2 Mo maximum) est stocké une fois.
 const CHAT_IMAGE_MAX = 2_800_000; // caractères de la data URL (≈ 2 Mo de fichier)
 const messageBody = (p, maxText) => {
@@ -208,6 +211,7 @@ const handlers = {
   // Micro coupé ou ouvert : visible par tous les membres du salon vocal.
   setVoiceMuted(me, p) {
     run('UPDATE voice_connections SET muted = ? WHERE user_id = ?', p.muted ? 1 : 0, me.id);
+    run('UPDATE call_connections SET muted = ? WHERE user_id = ?', p.muted ? 1 : 0, me.id);
   },
 
   updateProfile(me, p) {
@@ -488,18 +492,38 @@ const handlers = {
     run('UPDATE channels SET name = ? WHERE id = ?', raw.toLowerCase(), ch.id);
   },
 
+  // Un seul salon à la fois (espace ou appel privé). 5 personnes maximum par vocal d'espace.
   joinVoice(me, p) {
     const ch = one('SELECT * FROM channels WHERE id = ?', p.channelId);
     if (!ch || ch.type !== 'voice') fail('Salon vocal introuvable.', 404);
     if (!isMember(ch.server_id, me.id)) fail('Vous n’êtes pas membre de cet espace.', 403);
-    // 5 personnes maximum par vocal (hors soi-même si l'on y est déjà).
     const count = one('SELECT COUNT(*) AS n FROM voice_connections WHERE channel_id = ? AND user_id <> ?', ch.id, me.id).n;
     if (count >= 5) fail('Ce vocal est complet (5 personnes maximum).', 409);
+    run('DELETE FROM call_connections WHERE user_id = ?', me.id);
     run('INSERT OR REPLACE INTO voice_connections (user_id, channel_id) VALUES (?, ?)', me.id, ch.id);
   },
 
   leaveVoice(me) {
     run('DELETE FROM voice_connections WHERE user_id = ?', me.id);
+    run('DELETE FROM call_connections WHERE user_id = ?', me.id);
+  },
+
+  // Appel privé entre deux amis (ou deux conversations acceptées) : deux places, salon « call:… ».
+  joinCall(me, p) {
+    const peerId = String(p.peerId ?? '');
+    if (!peerId || peerId === me.id) fail('Appel impossible.', 400);
+    if (!one('SELECT 1 FROM users WHERE id = ?', peerId)) fail('Utilisateur introuvable.', 404);
+    const friend = one("SELECT 1 FROM friendships WHERE status = 'accepted' AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?))", me.id, peerId, peerId, me.id);
+    const dm = one("SELECT 1 FROM dms WHERE status = 'ok' AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) LIMIT 1", me.id, peerId, peerId, me.id);
+    if (!friend && !dm) fail('Vous ne pouvez appeler que vos amis ou une conversation acceptée.', 403);
+    const room = callRoom(me.id, peerId);
+    if (one('SELECT COUNT(*) AS n FROM call_connections WHERE room = ? AND user_id <> ?', room, me.id).n >= 2) fail('Cet appel est déjà complet.', 409);
+    run('DELETE FROM voice_connections WHERE user_id = ?', me.id);
+    run('INSERT OR REPLACE INTO call_connections (user_id, room, muted) VALUES (?, ?, 0)', me.id, room);
+  },
+
+  leaveCall(me) {
+    run('DELETE FROM call_connections WHERE user_id = ?', me.id);
   },
 
   createRole(me, p) {
@@ -568,20 +592,6 @@ const handlers = {
       fail('Un salon porte déjà ce nom dans cet espace.', 409);
     }
     run('UPDATE channels SET name = ? WHERE id = ?', raw.toLowerCase(), ch.id);
-  },
-
-  joinVoice(me, p) {
-    const ch = one('SELECT * FROM channels WHERE id = ?', p.channelId);
-    if (!ch || ch.type !== 'voice') fail('Salon vocal introuvable.', 404);
-    if (!isMember(ch.server_id, me.id)) fail('Vous n’êtes pas membre de cet espace.', 403);
-    // 5 personnes maximum par vocal (hors soi-même si l'on y est déjà).
-    const count = one('SELECT COUNT(*) AS n FROM voice_connections WHERE channel_id = ? AND user_id <> ?', ch.id, me.id).n;
-    if (count >= 5) fail('Ce vocal est complet (5 personnes maximum).', 409);
-    run('INSERT OR REPLACE INTO voice_connections (user_id, channel_id) VALUES (?, ?)', me.id, ch.id);
-  },
-
-  leaveVoice(me) {
-    run('DELETE FROM voice_connections WHERE user_id = ?', me.id);
   },
 
   createRole(me, p) {

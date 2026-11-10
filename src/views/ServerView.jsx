@@ -9,7 +9,7 @@ import PlusBadge, { RoleBadge } from '../components/PlusBadge';
 import VoiceScreen from '../components/VoiceScreen';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
-import { isVoiceMuted, setVoiceMuted, unlockAudio } from '../lib/voice';
+import { isVoiceMuted, setVoiceMuted, unlockAudio, useSpeaking } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
 import { isOnline } from '../lib/util';
@@ -86,6 +86,8 @@ export default function ServerView({ serverId, channelId, goHome }) {
     if (current && unreadHere > 0) markChannelRead(current.id).catch(() => {});
   }, [current?.id, unreadHere]); // eslint-disable-line react-hooks/exhaustive-deps
   const listRef = useRef(null);
+  // Membres qui parlent en ce moment : un anneau blanc entoure leur photo.
+  const speaking = useSpeaking();
   // Le fil reste collé au bas tant qu'on y est : une photo qui finit de charger ne fait pas sauter la vue,
   // et on ne force pas le défilement quand on relit les anciens messages.
   const stuck = useRef(true);
@@ -352,7 +354,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                   <span className="flex -space-x-2">
                     {users.slice(0, 5).map((u) => (
                       <span key={u.id} className="relative">
-                        <Avatar user={u} size="xs" className="ring-2 ring-surface" />
+                        <Avatar user={u} size="xs" className={`ring-2 transition ${speaking.has(u.id) ? 'ring-white shadow-[0_0_10px_rgba(255,255,255,0.85)]' : 'ring-surface'}`} />
                         <MicBadge muted={voiceMuted(u.id)} />
                       </span>
                     ))}
