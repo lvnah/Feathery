@@ -240,6 +240,18 @@ export const leaveVoice = () => {
   if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => v.user_id !== me.id) }));
   return act('leaveVoice');
 };
+// Appel privé : même salon « call:… » que sur le serveur (identifiants triés).
+export const callRoom = (a, b) => `call:${[a, b].sort().join('|')}`;
+export const joinCall = (peerId) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: [...s.voice.filter((v) => v.user_id !== me.id), { user_id: me.id, channel_id: callRoom(me.id, peerId), muted: false }] }));
+  return act('joinCall', { peerId });
+};
+export const leaveCall = () => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => v.user_id !== me.id) }));
+  return act('leaveCall');
+};
 export const createRole = (serverId, role) => act('createRole', { serverId, ...role });
 export const kickMember = (serverId, userId) => act('kickMember', { serverId, userId });
 export const reportUser = (targetId, reason, serverId = null) => act('reportUser', { targetId, reason, serverId });

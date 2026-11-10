@@ -86,6 +86,13 @@ export function buildSnapshot(me) {
   const voice = cIds.length
     ? all(`SELECT * FROM voice_connections WHERE channel_id IN (${marks(cIds)})`, ...cIds)
     : [];
+  // Appels privés : je vois les participants de mon appel en cours (ou d'un appel qui me sonne).
+  // Un appel me concerne si mon identifiant est l'un des deux de son salon « call:a|b » (même si je n'ai pas encore rejoint).
+  const calls = all(
+    "SELECT user_id, room AS channel_id, muted FROM call_connections WHERE room LIKE ? OR room LIKE ?",
+    `call:${me.id}|%`, `call:%|${me.id}`,
+  );
+  voice.push(...calls);
 
   // Utilisateurs visibles : moi + membres de mes espaces + relations (amis, DM, vocal).
   const ids = new Set([me.id]);
