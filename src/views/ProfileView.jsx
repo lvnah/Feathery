@@ -4,7 +4,7 @@ import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '..
 import { BADGE_COLORS, badgeGradient, BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
 import { NAME_COLORS_BASIC, NAME_COLORS_PLUS } from '../lib/util';
-import PlusBadge, { RoleBadge } from '../components/PlusBadge';
+import PlusBadge, { AdminCrown, RoleBadge } from '../components/PlusBadge';
 import Flag from '../components/Flag';
 import CountrySelect from '../components/CountrySelect';
 import { countryName } from '../lib/countries';
@@ -252,7 +252,7 @@ function PublicProfile({ user, goBack }) {
               <Avatar user={user} size="xl" showStatus className="-mt-12 ring-4 ring-surface" />
               <div className="min-w-0">
                 <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-extrabold">
-                  <span className="min-w-0 break-all" style={nameStyle(user)}>{user.pseudo}</span>
+                  <AdminCrown user={user} /><span className="min-w-0 break-all" style={nameStyle(user)}>{user.pseudo}</span>
                   {/* Tag : une pastille qui s'affiche en entier, sans être coupée. */}
                   <span className="shrink-0 whitespace-nowrap rounded-xl bg-slate-100 px-2.5 py-0.5 font-mono text-sm font-bold tracking-wide text-slate-600">#{user.tag}</span>
                   <RoleBadge user={user} />

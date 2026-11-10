@@ -390,6 +390,7 @@ const handlers = {
       patch.push('theme = ?'); args.push(p.theme);
     }
     if (p.dmOpen !== undefined) { patch.push('dm_open = ?'); args.push(p.dmOpen ? 1 : 0); }
+    if (p.linksOn !== undefined) { patch.push('links_on = ?'); args.push(p.linksOn ? 1 : 0); }
     if (p.acceptFriendRequests !== undefined) { patch.push('accept_friend_requests = ?'); args.push(p.acceptFriendRequests ? 1 : 0); }
     if (patch.length) run(`UPDATE users SET ${patch.join(', ')} WHERE id = ?`, ...args, me.id);
   },

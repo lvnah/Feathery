@@ -221,6 +221,12 @@ export default function SettingsView() {
             ['open', 'Tout le monde peut m’écrire', 'Les messages arrivent directement, sans demande, même sans être amis.'],
           ]}
         />
+        <Toggle
+          label="Liens cliquables"
+          hint="Les adresses web dans les messages et les salons s'ouvrent au clic. Désactivé, elles restent du texte."
+          checked={st.linksOn !== false}
+          onChange={(v) => set({ linksOn: v })}
+        />
       </Card>
     );
   } else if (section === 'friends') {

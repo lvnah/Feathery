@@ -48,3 +48,23 @@ export function MentionSuggest({ candidates, onPick }) {
     </div>
   );
 }
+
+// Adresse web (http ou https) : le texte qui la suit immédiatement de ponctuation n'en fait pas partie.
+const URL_SPLIT = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/i;
+
+// Texte d'un message : liens cliquables (si activés dans les paramètres) et mentions.
+export function RichText({ text, users, meName = '', onOpen, links = true }) {
+  return (
+    <>
+      {String(text ?? '').split(URL_SPLIT).map((part, i) => {
+        if (i % 2 === 0) return <MentionText key={i} text={part} users={users} meName={meName} onOpen={onOpen} />;
+        if (!links) return <Fragment key={i}>{part}</Fragment>;
+        return (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer nofollow" className="break-all font-semibold text-sky-400 underline underline-offset-2 hover:text-sky-300">
+            {part}
+          </a>
+        );
+      })}
+    </>
+  );
+}

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { acceptDM, deleteDM, hideConversation, friendsOf, friendshipBetween, getMe, getUser, markDmRead, refuseDM, respondFriendRequest, sendDM, sendFriendRequest, unreadCount } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, TimeAgo } from '../components/ui';
 import { isOnline, statusLabel, statusColor, nameStyle } from '../lib/util';
-import { MentionText } from '../components/Mentions';
-import PlusBadge, { RoleBadge } from '../components/PlusBadge';
+import { RichText } from '../components/Mentions';
+import PlusBadge, { AdminCrown, RoleBadge } from '../components/PlusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
@@ -39,6 +39,14 @@ export default function MessagesView({ withId }) {
     .sort((a, b) => (b.last?.created_at || 0) - (a.last?.created_at || 0) || a.user.pseudo.localeCompare(b.user.pseudo));
 
   const requests = unread.requests.map((id) => getUser(s, id)).filter(Boolean);
+  // Les trois conversations avec le plus de messages : une petite flamme dans la liste.
+  const messageCount = new Map();
+  for (const d of s.dms) {
+    if (d.kind === 'call') continue;
+    const peer = d.from === me.id ? d.to : d.from;
+    messageCount.set(peer, (messageCount.get(peer) || 0) + 1);
+  }
+  const topActive = new Set([...messageCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).filter(([, n]) => n > 0).map(([id]) => id));
   const partner = withId ? getUser(s, withId) : null;
   const thread = partner
     ? s.dms.filter((d) => (d.from === me.id && d.to === partner.id) || (d.from === partner.id && d.to === me.id)).sort((a, b) => a.created_at - b.created_at)
@@ -137,6 +145,7 @@ export default function MessagesView({ withId }) {
               </button>
               <span className="min-w-0 flex-1">
                 <span onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="inline-block max-w-full truncate font-bold hover:underline" style={nameStyle(user)}>{user.pseudo}</span>
+                {topActive.has(user.id) && <Icon name="flame" title="Une de vos conversations les plus actives" className="ml-1.5 inline h-3.5 w-3.5 align-[-2px] text-amber-400" />}
                 <span className="block truncate text-xs text-slate-500">{last ? (last.content || (last.image ? 'Photo' : '')) : statusLabel(user)}</span>
               </span>
               <CountBadge n={unread.dms[user.id] || 0} />
@@ -163,7 +172,7 @@ export default function MessagesView({ withId }) {
               <button onClick={() => go({ name: 'profile', userId: partner.id })} className="flex min-w-0 items-center gap-3 text-left">
                 <Avatar user={partner} size="sm" showStatus />
                 <span className="min-w-0">
-                  <span className="flex items-center gap-2 font-bold"><span className="truncate" style={nameStyle(partner)}>{partner.pseudo}</span><RoleBadge user={partner} /></span>
+                  <span className="flex items-center gap-2 font-bold"><AdminCrown user={partner} /><span className="truncate" style={nameStyle(partner)}>{partner.pseudo}</span><RoleBadge user={partner} /></span>
                   <span className="block text-xs text-slate-500"><span style={{ color: statusColor(partner) }}>{statusLabel(partner)}</span></span>
                 </span>
               </button>
@@ -210,7 +219,6 @@ export default function MessagesView({ withId }) {
                   return (
                     <div key={d.id} className="flex justify-center">
                       <span className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-700">
-                        <Icon name="phone" className="h-3.5 w-3.5" />
                         {d.content}
                         <TimeAgo ts={d.created_at} className="font-normal text-slate-400" />
                       </span>
@@ -226,11 +234,11 @@ export default function MessagesView({ withId }) {
                     </button>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span onClick={() => openUser(author.id)} onContextMenu={(e) => personMenu(e, author)} className="cursor-pointer font-bold text-slate-900 hover:underline" style={nameStyle(author)}>{author.pseudo}</span>
+                        <AdminCrown user={author} /><span onClick={() => openUser(author.id)} onContextMenu={(e) => personMenu(e, author)} className="cursor-pointer font-bold text-slate-900 hover:underline" style={nameStyle(author)}>{author.pseudo}</span>
                         <RoleBadge user={author} />
                         {d.status === 'request' && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">En attente</span>}
                       </div>
-                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"><MentionText text={d.content} users={pseudos} meName={me.pseudo} onOpen={(id) => openModal('mini', { userId: id })} /></p>}
+                      {d.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"><RichText text={d.content} users={pseudos} meName={me.pseudo} links={me.settings?.linksOn !== false} onOpen={(id) => openModal('mini', { userId: id })} /></p>}
                       <MessageImage src={d.image} gif={d.gif} onLoad={stick} />
                     </div>
                     <TimeAgo ts={d.created_at} className="hidden shrink-0 whitespace-nowrap text-xs text-slate-400 sm:block" />
@@ -273,15 +281,22 @@ export default function MessagesView({ withId }) {
 // Appeler ce contact : l'appel lui-même s'affiche dans la fenêtre d'appel (CallOverlay).
 function CallStrip({ me, partner, s }) {
   const { toast } = useUI();
+  // Anti-spam côté navigateur : un délai court entre deux appels (le serveur limite aussi le nombre).
+  const [cooling, setCooling] = useState(false);
   if (callOf(s)) return null;
   const online = isOnline(partner);
   return (
     <div className="flex items-center justify-end border-b border-slate-100 px-5 py-2.5">
       <button
         type="button"
-        disabled={!online}
+        disabled={!online || cooling}
         title={online ? `Appeler ${partner.pseudo}` : `${partner.pseudo} est hors ligne`}
-        onClick={() => { unlockAudio(); run(toast, () => joinCall(partner.id), `Appel de ${partner.pseudo}`); }}
+        onClick={() => {
+          unlockAudio();
+          setCooling(true);
+          setTimeout(() => setCooling(false), 2000);
+          run(toast, () => joinCall(partner.id), `Appel de ${partner.pseudo}`);
+        }}
         className="btn-soft !rounded-full !py-2 !text-sm disabled:opacity-40"
       >
         {online ? `Appeler ${partner.pseudo}` : `${partner.pseudo} est hors ligne`}
