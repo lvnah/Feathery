@@ -396,6 +396,9 @@ export default function ServerView({ serverId, channelId, goHome }) {
                   <Icon name={isVoiceMuted() ? 'micOff' : 'mic'} className="h-4 w-4" />
                   {isVoiceMuted() ? 'Micro coupé' : 'Micro ouvert'}
                 </button>
+                {!voiceOpen && (
+                  <button onClick={() => setVoiceOpen(true)} className="btn-soft !py-2 max-sm:flex-1">Retourner au vocal</button>
+                )}
                 <button onClick={() => run(toast, () => leaveVoice())} className="btn-danger !py-2 max-sm:flex-1">Quitter</button>
               </div>
             </div>
@@ -408,7 +411,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
             >
               <span className={`h-2.5 w-2.5 rounded-full ${vstatus === 'connected' || vstatus === 'alone' ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'}`} />
               <span className="min-w-0 truncate">{voiceStatusLabel(vstatus)} · {myVoiceChannel.name} · {voiceUsers(myVoiceChannel).length}/5</span>
-              <span className="ml-auto shrink-0 text-brand-600">Ouvrir</span>
+              <span className="ml-auto shrink-0 text-brand-600">Retourner au vocal</span>
             </button>
           )}
           <Modal open={menuOpen} title={server.name} onClose={() => setMenuOpen(false)}>

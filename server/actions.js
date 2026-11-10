@@ -37,6 +37,21 @@ const text = (value, min, max, message) => {
   if (t.length < min || t.length > max) fail(message);
   return t;
 };
+// Trace d'appel dans la conversation privée : « Appel terminé · durée » ou « Appel manqué ».
+const finishCall = (room) => {
+  const st = one('SELECT * FROM call_states WHERE room = ?', room);
+  if (!st) return;
+  run('DELETE FROM call_states WHERE room = ?', room);
+  const callee = room.slice(5).split('|').find((id) => id !== st.caller_id);
+  let content = 'Appel manqué';
+  if (st.answered_at) {
+    const sec = Math.max(1, Math.round((now() - st.answered_at) / 1000));
+    const m = Math.floor(sec / 60);
+    content = `Appel terminé · ${m > 0 ? `${m} min ${sec % 60} s` : `${sec} s`}`;
+  }
+  run("INSERT INTO dms (id, from_id, to_id, content, created_at, status, image, kind) VALUES (?, ?, ?, ?, ?, 'ok', '', 'call')", newId('d'), st.caller_id, callee, content, now());
+};
+
 // Blocage dans un sens ou dans l'autre.
 const isBlockedPair = (a, b) =>
   !!one('SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) LIMIT 1', a, b, b, a);
@@ -178,17 +193,18 @@ const handlers = {
   changeEmail: (me, p) => changeEmail(me, p),
   // Statistiques de jeux (3 maximum) : rang et heures, affichées dans le profil.
   setGames(me, p) {
-    const list = Array.isArray(p.games) ? p.games.slice(0, 3) : [];
+    const list = Array.isArray(p.games) ? p.games.slice(0, 6) : [];
     const rows = list.map((g) => {
       const game = String(g.game ?? '').trim();
       if (!game || game.length > 24) fail('Nom de jeu : 1 à 24 caractères.');
       const rank = String(g.rank ?? '').trim();
       if (rank.length > 24) fail('Rang : 24 caractères maximum.');
-      return { game, rank, hours: 0 }; // seul le nom du jeu et le niveau sont affichés
+      const platform = String(g.platform ?? '').trim().slice(0, 20);
+      return { game, rank, platform, hours: 0 }; // seul le nom du jeu, la plateforme et le niveau sont affichés
     });
     transaction(() => {
       run('DELETE FROM user_games WHERE user_id = ?', me.id);
-      rows.forEach((r, i) => run('INSERT INTO user_games (user_id, position, game, rank, hours) VALUES (?, ?, ?, ?, ?)', me.id, i, r.game, r.rank, r.hours));
+      rows.forEach((r, i) => run('INSERT INTO user_games (user_id, position, game, rank, hours, platform) VALUES (?, ?, ?, ?, ?, ?)', me.id, i, r.game, r.rank, r.hours, r.platform));
     });
   },
 
@@ -541,7 +557,14 @@ const handlers = {
     if (isBlockedPair(me.id, peerId)) fail('Appel impossible.', 403);
     if (!friend && !dm) fail('Vous ne pouvez appeler que vos amis ou une conversation acceptée.', 403);
     const room = callRoom(me.id, peerId);
-    if (one('SELECT COUNT(*) AS n FROM call_connections WHERE room = ? AND user_id <> ?', room, me.id).n >= 2) fail('Cet appel est déjà complet.', 409);
+    const others = one('SELECT COUNT(*) AS n FROM call_connections WHERE room = ? AND user_id <> ?', room, me.id).n;
+    if (others >= 2) fail('Cet appel est déjà complet.', 409);
+    // Premier à lancer l'appel : il en est l'appelant. Le second qui rejoint décroche l'appel.
+    if (!others && !one('SELECT 1 FROM call_states WHERE room = ?', room)) {
+      run('INSERT INTO call_states (room, caller_id, started_at, answered_at) VALUES (?, ?, ?, 0)', room, me.id, now());
+    } else if (others) {
+      run('UPDATE call_states SET answered_at = ? WHERE room = ? AND answered_at = 0', now(), room);
+    }
     run('DELETE FROM voice_connections WHERE user_id = ?', me.id);
     run('INSERT OR REPLACE INTO call_connections (user_id, room, muted) VALUES (?, ?, 0)', me.id, room);
   },
@@ -551,12 +574,15 @@ const handlers = {
     const mine = one('SELECT room FROM call_connections WHERE user_id = ?', me.id);
     if (mine) run('DELETE FROM call_connections WHERE room = ?', mine.room);
     run('DELETE FROM call_connections WHERE user_id = ?', me.id);
+    if (mine) finishCall(mine.room);
   },
 
   // Refuser un appel entrant : l'appelant ne sonne plus et voit l'appel se terminer.
   declineCall(me, p) {
     const peerId = String(p.peerId ?? '');
-    run('DELETE FROM call_connections WHERE room = ? AND user_id <> ?', callRoom(me.id, peerId), me.id);
+    const room = callRoom(me.id, peerId);
+    run('DELETE FROM call_connections WHERE room = ? AND user_id <> ?', room, me.id);
+    finishCall(room);
   },
 
   createRole(me, p) {
