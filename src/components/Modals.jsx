@@ -4,7 +4,7 @@ import { blockUser, createChannel, createServer, getMe, getUser, joinServer, reg
 import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
 import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle, fullName, inviteShown, inviteUrl, isOnline, statusLabel, statusColor } from '../lib/util';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
-import PlusBadge, { RoleBadge } from './PlusBadge';
+import PlusBadge, { AdminCrown, RoleBadge } from './PlusBadge';
 import Flag from './Flag';
 import { countryName } from '../lib/countries';
 import { roleColorOf, roleNameOf } from '../lib/store';
@@ -196,7 +196,7 @@ function MiniProfileModal({ userId, serverId, onClose }) {
           Voir profil complet
         </button>
         <div>
-          <p className="flex items-center gap-2 text-lg font-extrabold" style={{ color }}>{user.pseudo}<RoleBadge user={user} />{user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}</p>
+          <p className="flex items-center gap-2 text-lg font-extrabold" style={{ color }}><AdminCrown user={user} />{user.pseudo}<RoleBadge user={user} />{user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}</p>
           <p className="text-sm text-slate-400">#{user.tag} · <span style={{ color: statusColor(user) }}>{statusLabel(user)}</span>{isOnline(user) && user.device === 'mobile' && <Icon name="phone" title="Connecté sur téléphone ou tablette" className="ml-1.5 inline h-3.5 w-3.5 align-[-2px]" />}</p>
         </div>
         <p className="text-sm text-slate-600">{user.bio || 'Aucune biographie.'}</p>

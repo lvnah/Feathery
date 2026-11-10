@@ -17,29 +17,19 @@ export default function PlusBadge({ className = '', color = '' }) {
   );
 }
 
-// Badge administrateur : le même badge que PLUS, en rouge, avec le logo rouge.
-export function AdminBadge({ className = '' }) {
-  const mask = { WebkitMaskImage: `url(${LOGO_URL})`, maskImage: `url(${LOGO_URL})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center' };
+// Couronne blanche devant le pseudo d'un administrateur.
+export function AdminCrown({ user, className = '' }) {
+  if (!user?.is_admin) return null;
   return (
-    <span
-      title="Administrateur"
-      aria-label="Administrateur"
-      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-700 p-[2px] ${className}`}
-    >
-      <span className="flex h-full w-full items-center justify-center rounded-full bg-surface">
-        <span aria-hidden="true" className="h-2.5 w-2.5 bg-red-600" style={mask} />
-      </span>
-    </span>
+    <svg viewBox="0 0 24 24" aria-label="Administrateur" role="img" className={`inline-block h-3.5 w-3.5 shrink-0 ${className}`}>
+      <title>Administrateur</title>
+      <path fill="#ffffff" d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z" />
+    </svg>
   );
 }
 
-// Affiche les badges qui s'appliquent : administrateur et PLUS peuvent être affichés ensemble.
+// Badge PLUS (après le pseudo). La couronne de l'administrateur se place avant le pseudo : voir AdminCrown.
 export function RoleBadge({ user, className = '' }) {
-  if (!user?.is_admin && !user?.is_plus) return null;
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1">
-      {!!user.is_admin && <AdminBadge className={className} />}
-      {!!user.is_plus && <PlusBadge className={className} color={user.badge_color || ''} />}
-    </span>
-  );
+  if (!user?.is_plus) return null;
+  return <PlusBadge className={className} color={user.badge_color || ''} />;
 }

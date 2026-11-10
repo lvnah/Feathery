@@ -318,6 +318,8 @@ async function handleApi(req, res, path) {
       throw new HttpError(429, 'Vous envoyez trop de messages. Patientez un instant.');
     }
     if (name === 'joinServer' && !hit(`join:${me.id}`, 15, MIN)) throw tooMany();
+    // Anti-spam : pas plus de 5 appels en 10 secondes (évite les clics répétés et le harcèlement).
+    if (name === 'joinCall' && !hit(`call:${me.id}`, 5, 10_000)) throw new HttpError(429, 'Trop d’appels d’affilée : patientez quelques secondes.');
     if (name === 'changePassword' && !hit(`pwd:${me.id}`, 6, 15 * MIN)) throw tooMany();
     const result = await runAction(name, me, await readJson(req, MAX_BODY));
     // Mot de passe changé : les autres appareils sont déconnectés, celui-ci reste connecté.

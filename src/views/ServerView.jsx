@@ -5,7 +5,7 @@ import {
   assignRole, deleteMessage,
 } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner, TimeAgo } from '../components/ui';
-import PlusBadge, { RoleBadge } from '../components/PlusBadge';
+import PlusBadge, { AdminCrown, RoleBadge } from '../components/PlusBadge';
 import SpaceHero from '../components/SpaceHero';
 import VoiceScreen from '../components/VoiceScreen';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
@@ -14,7 +14,7 @@ import { isVoiceMuted, setVoiceMuted, unlockAudio, useSpeaking, useVoiceStatus, 
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
 import { isOnline } from '../lib/util';
-import { MentionText, MentionSuggest, mentionQuery } from '../components/Mentions';
+import { RichText, MentionSuggest, mentionQuery } from '../components/Mentions';
 
 // Exécute une action async et affiche le résultat dans un toast.
 export async function run(toast, fn, okMessage) {
@@ -210,7 +210,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
       >
         <Avatar user={u} size="sm" showStatus />
         <span className="min-w-0">
-          <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-sm font-bold" style={{ color }}>{u.pseudo}</span><RoleBadge user={u} /></span>
+          <span className="flex min-w-0 items-center gap-1.5"><AdminCrown user={u} /><span className="truncate text-sm font-bold" style={{ color }}>{u.pseudo}</span><RoleBadge user={u} /></span>
           <span className="block truncate text-xs font-semibold text-slate-500">#{u.tag}</span>
           {voiceChannelOf(u.id) && (
             <span className="flex items-center gap-1 truncate text-xs font-bold text-brand-600">
@@ -451,12 +451,12 @@ export default function ServerView({ serverId, channelId, goHome }) {
                       </button>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <button onClick={() => openModal('mini', { userId: author.id, serverId })} onContextMenu={(e) => memberMenu(e, author.id)} className="font-bold hover:underline" style={{ color }}>
+                          <AdminCrown user={author} /><button onClick={() => openModal('mini', { userId: author.id, serverId })} onContextMenu={(e) => memberMenu(e, author.id)} className="font-bold hover:underline" style={{ color }}>
                             {author.pseudo}
                           </button>
                           <RoleBadge user={author} />
                         </div>
-                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"><MentionText text={m.content} users={pseudos} meName={me.pseudo} onOpen={(id) => openModal('mini', { userId: id, serverId })} /></p>}
+                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"><RichText text={m.content} users={pseudos} meName={me.pseudo} links={me.settings?.linksOn !== false} onOpen={(id) => openModal('mini', { userId: id, serverId })} /></p>}
                         <MessageImage src={m.image} gif={m.gif} onLoad={stick} />
                       </div>
                       <TimeAgo ts={m.created_at} className="hidden shrink-0 whitespace-nowrap text-xs text-slate-400 sm:block" />

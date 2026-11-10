@@ -49,7 +49,7 @@ export function buildSnapshot(me) {
   // Réglages propres au membre connecté (thème, messages, demandes d'amis).
   // Membres que je bloque (pour la liste de déblocage dans les paramètres).
   const blockedByMe = all('SELECT u.id, u.pseudo, u.tag FROM blocks b JOIN users u ON u.id = b.blocked_id WHERE b.blocker_id = ? ORDER BY u.pseudo', me.id);
-  const mySettings = { theme: 'dark', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0, blocked: blockedByMe };
+  const mySettings = { theme: 'dark', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0, linksOn: me.links_on !== 0, blocked: blockedByMe };
   const servers = all(
     `SELECT s.* FROM servers s JOIN memberships m ON m.server_id = s.id
      WHERE m.user_id = ? ORDER BY s.created_at`,

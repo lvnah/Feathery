@@ -22,6 +22,7 @@ export default function CommunityView() {
     <div className="thin-scroll flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto pb-4">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <PageBanner icon="search" title="Communauté" subtitle={`${list.length} espace(s) public(s) à découvrir`}>
+          <button onClick={() => openModal('join')} className="btn-ghost !rounded-full !py-2.5">Rejoindre un espace</button>
           <button onClick={() => openModal('createServer')} className="btn-primary !rounded-full !py-2.5">Créer un espace</button>
         </PageBanner>
         <input className="field" placeholder="Rechercher un espace public…" value={q} onChange={(e) => setQ(e.target.value)} />
