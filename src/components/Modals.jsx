@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createChannel, createServer, getMe, getUser, joinServer, regenerateInvite, reportUser, updateChannel, setChannelReadonly, setGames } from '../lib/store';
+import { blockUser, createChannel, createServer, getMe, getUser, joinServer, regenerateInvite, reportUser, updateChannel, setChannelReadonly, setGames } from '../lib/store';
 import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
 import { LOGO_CLASSIC, bannerLogoLayer, bannerStyle, fullName, inviteShown, inviteUrl, isOnline, statusLabel, statusColor } from '../lib/util';
 import { fileToDataUrl, readGif, ESPACE_BANNER_OPTS, GIF_MAX_BANNER, ICON_OPTS } from '../lib/images';
@@ -175,7 +175,7 @@ function InviteModal({ serverId, onClose }) {
 // Mini-profil : bannière, avatar, rôle sur l'espace, actions.
 function MiniProfileModal({ userId, serverId, onClose }) {
   const s = useStore();
-  const { go, openModal } = useUI();
+  const { go, openModal, toast } = useUI();
   const me = getMe(s);
   const user = getUser(s, userId);
   if (!user) return null;
@@ -213,6 +213,9 @@ function MiniProfileModal({ userId, serverId, onClose }) {
             </button>
             <button className="btn-danger flex-1" onClick={() => openModal('report', { userId: user.id, serverId })}>
               <Icon name="flag" className="h-4 w-4" /> Signaler
+            </button>
+            <button className="btn-ghost flex-1" onClick={() => run(toast, () => blockUser(user.id), 'Membre bloqué')}>
+              Bloquer
             </button>
           </div>
         )}

@@ -175,7 +175,7 @@ export default function Home() {
           <HeroBanner onJoin={() => openModal('join')} onCreate={() => openModal('createServer')} />
 
           {/* Espaces ou tableau de bord vide */}
-          <section className="panel flex min-h-64 flex-1 flex-col p-6">
+          <section className="panel flex shrink-0 flex-col p-6">
             {servers.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
                 <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-50 text-amber-400">

@@ -37,6 +37,9 @@ const text = (value, min, max, message) => {
   if (t.length < min || t.length > max) fail(message);
   return t;
 };
+// Blocage dans un sens ou dans l'autre.
+const isBlockedPair = (a, b) =>
+  !!one('SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) LIMIT 1', a, b, b, a);
 // Salon d'un appel privé entre deux membres (même format côté navigateur).
 export const callRoom = (a, b) => `call:${[a, b].sort().join('|')}`;
 
@@ -279,6 +282,7 @@ const handlers = {
     }
     if (!target) fail('Utilisateur introuvable. Format attendu : Pseudo#1234', 404);
     if (target.id === me.id) fail('Vous ne pouvez pas vous ajouter vous-même.');
+    if (isBlockedPair(me.id, target.id)) fail('Utilisateur introuvable. Format attendu : Pseudo#1234', 404);
     if (target.accept_friend_requests === 0) fail('Ce membre n’accepte pas les demandes d’ami.', 403);
     const existing = one(
       'SELECT * FROM friendships WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)',
@@ -312,9 +316,25 @@ const handlers = {
 
   // Message privé. Sans amitié ni conversation acceptée, c'est une demande de message :
   // le destinataire doit l'accepter avant de voir la conversation. Répondre vaut acceptation.
+  // Bloquer un membre : il disparaît de mes messages, de mes amis, des espaces et du vocal (et moi pour lui).
+  blockUser(me, p) {
+    const targetId = String(p.targetId ?? '');
+    if (!targetId || targetId === me.id) fail('Action impossible.', 400);
+    if (!one('SELECT 1 FROM users WHERE id = ?', targetId)) fail('Utilisateur introuvable.', 404);
+    run('INSERT OR IGNORE INTO blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)', me.id, targetId, now());
+    // Plus d'amitié ni d'appel en cours entre nous.
+    run('DELETE FROM friendships WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)', me.id, targetId, targetId, me.id);
+    run('DELETE FROM call_connections WHERE user_id = ? OR room LIKE ? OR room LIKE ?', targetId, `call:${me.id}|%`, `call:%|${me.id}`);
+  },
+
+  unblockUser(me, p) {
+    run('DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?', me.id, String(p.targetId ?? ''));
+  },
+
   sendDM(me, p) {
     const { content, image } = messageBody(p, 1000);
     if (p.toId === me.id) fail('Vous ne pouvez pas vous écrire à vous-même.');
+    if (isBlockedPair(me.id, String(p.toId ?? ''))) fail('Message impossible.', 403);
     if (!one('SELECT 1 FROM users WHERE id = ?', p.toId)) fail('Utilisateur introuvable.', 404);
     const pair = (a, b) => one('SELECT 1 FROM dms WHERE status = ? AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) LIMIT 1', 'ok', a, b, b, a);
     const friend = one(
@@ -518,6 +538,7 @@ const handlers = {
     if (!online) fail(`${peer.pseudo} est hors ligne : impossible de l’appeler pour le moment.`, 409);
     const friend = one("SELECT 1 FROM friendships WHERE status = 'accepted' AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?))", me.id, peerId, peerId, me.id);
     const dm = one("SELECT 1 FROM dms WHERE status = 'ok' AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) LIMIT 1", me.id, peerId, peerId, me.id);
+    if (isBlockedPair(me.id, peerId)) fail('Appel impossible.', 403);
     if (!friend && !dm) fail('Vous ne pouvez appeler que vos amis ou une conversation acceptée.', 403);
     const room = callRoom(me.id, peerId);
     if (one('SELECT COUNT(*) AS n FROM call_connections WHERE room = ? AND user_id <> ?', room, me.id).n >= 2) fail('Cet appel est déjà complet.', 409);

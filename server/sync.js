@@ -46,16 +46,21 @@ export function publicUser(u) {
 
 export function buildSnapshot(me) {
   // Réglages propres au membre connecté (thème, messages, demandes d'amis).
-  const mySettings = { theme: 'dark', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0 };
+  // Membres que je bloque (pour la liste de déblocage dans les paramètres).
+  const blockedByMe = all('SELECT u.id, u.pseudo, u.tag FROM blocks b JOIN users u ON u.id = b.blocked_id WHERE b.blocker_id = ? ORDER BY u.pseudo', me.id);
+  const mySettings = { theme: 'dark', dmOpen: !!me.dm_open, acceptFriendRequests: me.accept_friend_requests !== 0, email: me.email || '', emailVerified: me.email_verified !== 0, blocked: blockedByMe };
   const servers = all(
     `SELECT s.* FROM servers s JOIN memberships m ON m.server_id = s.id
      WHERE m.user_id = ? ORDER BY s.created_at`,
     me.id,
   );
   const sIds = servers.map((s) => s.id);
-  const memberships = sIds.length
+  // Membres bloqués dans un sens ou dans l'autre : invisibles pour moi (et moi pour eux).
+  const hidden = new Set(all('SELECT blocked_id AS id FROM blocks WHERE blocker_id = ? UNION SELECT blocker_id FROM blocks WHERE blocked_id = ?', me.id, me.id).map((r) => r.id));
+  const notHidden = (id) => !hidden.has(id);
+  const memberships = (sIds.length
     ? all(`SELECT * FROM memberships WHERE server_id IN (${marks(sIds)})`, ...sIds)
-    : [];
+    : []).filter((m) => notHidden(m.user_id));
   const memberRoles = sIds.length
     ? all(`SELECT * FROM member_roles WHERE server_id IN (${marks(sIds)})`, ...sIds)
     : [];
@@ -66,8 +71,8 @@ export function buildSnapshot(me) {
     ? all(`SELECT * FROM channels WHERE server_id IN (${marks(sIds)}) ORDER BY created_at, id`, ...sIds)
     : [];
   const cIds = channels.map((c) => c.id);
-  // 100 derniers messages par salon.
-  const messages = cIds.length
+  // 100 derniers messages par salon (sans les auteurs bloqués : voir plus bas).
+  const rawMessages = cIds.length
     ? all(
         `SELECT id, channel_id, user_id, content, image, created_at FROM (
            SELECT *, ROW_NUMBER() OVER (PARTITION BY channel_id ORDER BY created_at DESC) AS rn
@@ -76,7 +81,8 @@ export function buildSnapshot(me) {
         ...cIds,
       )
     : [];
-  const friendships = all('SELECT * FROM friendships WHERE from_id = ? OR to_id = ?', me.id, me.id);
+  const messages = rawMessages.filter((m) => notHidden(m.user_id));
+  const friendships = all('SELECT * FROM friendships WHERE from_id = ? OR to_id = ?', me.id, me.id).filter((f) => notHidden(f.from_id === me.id ? f.to_id : f.from_id));
   const allDms = all(
     'SELECT * FROM dms WHERE from_id = ? OR to_id = ? ORDER BY created_at DESC LIMIT 2000',
     me.id,
@@ -87,18 +93,18 @@ export function buildSnapshot(me) {
   const dms = allDms.filter((d) => {
     const peer = d.from_id === me.id ? d.to_id : d.from_id;
     const since = hiddenSince.get(peer);
-    return since === undefined || d.created_at > since;
+    return (since === undefined || d.created_at > since) && notHidden(peer);
   });
-  const voice = cIds.length
+  const voice = (cIds.length
     ? all(`SELECT * FROM voice_connections WHERE channel_id IN (${marks(cIds)})`, ...cIds)
-    : [];
+    : []).filter((v) => notHidden(v.user_id));
   // Appels privés : je vois les participants de mon appel en cours (ou d'un appel qui me sonne).
   // Un appel me concerne si mon identifiant est l'un des deux de son salon « call:a|b » (même si je n'ai pas encore rejoint).
   const calls = all(
     "SELECT user_id, room AS channel_id, muted FROM call_connections WHERE room LIKE ? OR room LIKE ?",
     `call:${me.id}|%`, `call:%|${me.id}`,
   );
-  voice.push(...calls);
+  voice.push(...calls.filter((c) => notHidden(c.user_id)));
 
   // Utilisateurs visibles : moi + membres de mes espaces + relations (amis, DM, vocal).
   const ids = new Set([me.id]);

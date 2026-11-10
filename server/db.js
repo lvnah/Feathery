@@ -134,6 +134,8 @@ addColumn('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 1');
 addColumn('users', 'device', "TEXT NOT NULL DEFAULT ''");
 addColumn('channels', 'readonly', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('servers', 'banner', "TEXT NOT NULL DEFAULT ''");
+// Blocages : un membre bloqué disparaît de la vie de l'autre (messages, privés, amis, vocal, liste des membres).
+db.exec(`CREATE TABLE IF NOT EXISTS blocks (blocker_id TEXT NOT NULL, blocked_id TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (blocker_id, blocked_id))`);
 // Pièce jointe d'un message (photo ou GIF) : adresse /api/img/… de l'image stockée.
 addColumn('messages', 'image', "TEXT NOT NULL DEFAULT ''");
 // Dernière activité de saisie (souris, clavier, toucher) : au-delà de 15 minutes, le membre passe absent.
