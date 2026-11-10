@@ -104,7 +104,13 @@ const IMAGE_LIMITS = { avatar: 60_000, banner: 160_000, icon: 60_000, espace: 1_
 const GIF_LIMITS = { avatar: 12_000_000, banner: 17_000_000, espace: 17_000_000 };
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS.
 const NAME_COLORS_BASIC = ['#111827', '#0d9488', '#2563eb', '#16a34a', '#9333ea', '#ea580c'];
-const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#4338ca', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet'];
+const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#4338ca', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet', 'chameleon', 'ice', 'fire', 'forest', 'gold', 'galaxy', 'sakura', 'mint'];
+// Icône d'espace : une image téléchargée, ou une icône prédéfinie 'preset:iN' (N de 0 à 6, même thème que les bannières).
+const iconValue = (value) => {
+  const v = String(value ?? '').trim();
+  if (/^preset:i[0-6]$/.test(v)) return v;
+  return imageData(v, 'icon', false);
+};
 const imageData = (value, kind, isPlus = false) => {
   // Renvoie l'URL de l'image enregistrée (les données ne sont plus gardées dans la ligne).
   const v = String(value ?? '').trim();
@@ -368,7 +374,7 @@ const handlers = {
       fail(me.is_plus ? 'Limite atteinte : 5 espaces maximum pour un membre PLUS.' : 'Limite atteinte : 3 espaces maximum. Passez PLUS pour en créer 5.', 403);
     }
     const name = text(p.name, 1, 16, 'Le nom doit faire entre 1 et 16 caractères.');
-    const icon = imageData(p.icon, 'icon', false);
+    const icon = iconValue(p.icon);
     let code;
     if (String(p.customCode ?? '').trim()) {
       if (!me.is_plus) fail('Le code personnalisé est réservé aux membres PLUS.', 403);
@@ -665,7 +671,7 @@ const handlers = {
 
   updateServerIcon(me, p) {
     requireOwner(p.serverId, me);
-    const icon = imageData(p.icon, 'icon', false);
+    const icon = iconValue(p.icon);
     if (!icon) fail('Image manquante.');
     run('UPDATE servers SET icon = ? WHERE id = ?', icon, p.serverId);
   },

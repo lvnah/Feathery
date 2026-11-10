@@ -99,7 +99,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   };
   useEffect(() => { stuck.current = true; stick(); }, [current?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { stick(); }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
-  const pseudos = new Set(s.users.map((u) => u.pseudo.toLowerCase()));
+  const pseudos = new Map(s.users.map((u) => [u.pseudo.toLowerCase(), u]));
   const mention = mentionQuery(text);
   const mentionCandidates = mention === null
     ? []
@@ -452,7 +452,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
                           </button>
                           <RoleBadge user={author} />
                         </div>
-                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"><MentionText text={m.content} names={pseudos} meName={me.pseudo} /></p>}
+                        {m.content && <p className="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"><MentionText text={m.content} users={pseudos} meName={me.pseudo} onOpen={(id) => openModal('mini', { userId: id, serverId })} /></p>}
                         <MessageImage src={m.image} gif={m.gif} onLoad={stick} />
                       </div>
                       <TimeAgo ts={m.created_at} className="hidden shrink-0 whitespace-nowrap text-xs text-slate-400 sm:block" />

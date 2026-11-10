@@ -41,6 +41,12 @@ export const statusLabel = (user) => STATUS_LABEL[statusKey(user)];
 // Couleur du texte de statut (lisible sur fond sombre) ; « En ligne » reste vert.
 export const STATUS_TEXT = { online: '#4ade80', game: '#a78bfa', away: '#fbbf24', offline: '#64748b' };
 
+// Icônes d'espace prédéfinies : 'preset:iN', même thème que la bannière de base N.
+export const presetIconIndex = (value) => {
+  const m = /^preset:i([0-6])$/.exec(String(value || ''));
+  return m ? Number(m[1]) : null;
+};
+
 // Lien d'invitation affiché et copié : feathery.fr/invite/CODE.
 export const INVITE_HOST = 'feathery.fr';
 export const inviteShown = (code) => `${INVITE_HOST}/invite/${code}`;
@@ -157,7 +163,7 @@ export function formatStamp(ts) {
 
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS (même liste que le serveur).
 export const NAME_COLORS_BASIC = ['#111827', '#64748b', '#2563eb', '#d97706', '#9333ea', '#ea580c'];
-export const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#ca8a04', '#b45309', '#6d28d9', '#7c3aed', '#4338ca', '#1d4ed8', '#0369a1', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet'];
+export const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#ca8a04', '#b45309', '#6d28d9', '#7c3aed', '#4338ca', '#1d4ed8', '#0369a1', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet', 'chameleon', 'ice', 'fire', 'forest', 'gold', 'galaxy', 'sakura', 'mint'];
 
 // Couleurs « arc-en-ciel » prêtes à l'emploi pour les membres PLUS (dégradé animé sur le pseudo).
 const RAINBOW_COLS = {
@@ -171,8 +177,16 @@ const RAINBOW_COLS = {
   ruby: ['#db2777', '#c026d3', '#f472b6'],
   lime: ['#84cc16', '#22c55e', '#eab308'],
   violet: ['#7c3aed', '#c084fc', '#f0abfc'],
+  chameleon: ['#34d399', '#60a5fa', '#c084fc', '#f472b6', '#fbbf24', '#34d399'],
+  ice: ['#e0f2fe', '#7dd3fc', '#38bdf8', '#e0f2fe'],
+  fire: ['#fde047', '#f97316', '#dc2626', '#fde047'],
+  forest: ['#14532d', '#22c55e', '#a3e635', '#14532d'],
+  gold: ['#fef08a', '#eab308', '#a16207', '#fef08a'],
+  galaxy: ['#312e81', '#a855f7', '#ec4899', '#312e81'],
+  sakura: ['#fbcfe8', '#f9a8d4', '#f472b6', '#fbcfe8'],
+  mint: ['#ccfbf1', '#5eead4', '#2dd4bf', '#ccfbf1'],
 };
-export const RAINBOW_LABELS = { rainbow: 'Arc-en-ciel', sunset: 'Coucher de soleil', ocean: 'Océan', aurora: 'Aurore', candy: 'Bonbon', neon: 'Néon', lagoon: 'Lagon', ruby: 'Fuchsia', lime: 'Citron vert', violet: 'Violet' };
+export const RAINBOW_LABELS = { rainbow: 'Arc-en-ciel', sunset: 'Coucher de soleil', ocean: 'Océan', aurora: 'Aurore', candy: 'Bonbon', neon: 'Néon', lagoon: 'Lagon', ruby: 'Fuchsia', lime: 'Citron vert', violet: 'Violet', chameleon: 'Caméléon', ice: 'Glace', fire: 'Feu', forest: 'Forêt', gold: 'Or', galaxy: 'Galaxie', sakura: 'Sakura', mint: 'Menthe' };
 const gradientOf = (cols) => `linear-gradient(90deg, ${cols.join(', ')})`;
 export const RAINBOW_GRADIENTS = Object.fromEntries(Object.entries(RAINBOW_COLS).map(([k, cols]) => [k, gradientOf(cols)]));
 

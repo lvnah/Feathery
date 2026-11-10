@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, setStatus, updateProfile } from '../lib/store';
+import { getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, updateProfile } from '../lib/store';
 import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '../components/ui';
 import { BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
@@ -119,19 +119,9 @@ function OwnProfile() {
               {!me.is_plus && <span className="text-xs text-slate-400">D’autres couleurs sont réservées aux membres PLUS.</span>}
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Statut">
-                <select className="field" value={me.status || 'online'} onChange={(e) => run(toast, () => setStatus(e.target.value))}>
-                  <option value="online">En ligne</option>
-                  <option value="game">En game</option>
-                  <option value="away">Absent</option>
-                  <option value="offline">Hors ligne</option>
-                </select>
-              </Field>
-              <Field label="Pays (Europe)">
-                <CountrySelect value={country} onChange={setCountry} />
-              </Field>
-            </div>
+            <Field label="Pays (Europe)">
+              <CountrySelect value={country} onChange={setCountry} />
+            </Field>
 
             <Field label="Photo de profil">
               <ImportButton onChange={pick(setAvatar, AVATAR_OPTS)} label={avatar ? 'Changer la photo' : 'Importer une photo'} />

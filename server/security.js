@@ -30,7 +30,7 @@ const APP_CSP = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https://*.giphy.com",
+  "img-src 'self' data: blob: https://*.giphy.com https://flagcdn.com",
   "media-src 'self' blob: data:",
   "connect-src 'self'",
   "worker-src 'self' blob:",
