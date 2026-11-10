@@ -52,6 +52,16 @@ const finishCall = (room) => {
   run("INSERT INTO dms (id, from_id, to_id, content, created_at, status, image, kind) VALUES (?, ?, ?, ?, ?, 'ok', '', 'call')", newId('d'), st.caller_id, callee, content, now());
 };
 
+// Supprime les salons rapides sans personne : leurs messages partent avec eux.
+export const dropEmptyQuickRooms = () => {
+  const empty = all('SELECT id FROM quick_rooms WHERE id NOT IN (SELECT room_id FROM quick_members)');
+  for (const r of empty) {
+    run('DELETE FROM quick_messages WHERE room_id = ?', r.id);
+    run('DELETE FROM quick_voice WHERE room_id = ?', r.id);
+    run('DELETE FROM quick_rooms WHERE id = ?', r.id);
+  }
+  return empty.length;
+};
 // Blocage dans un sens ou dans l'autre.
 const isBlockedPair = (a, b) =>
   !!one('SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?) LIMIT 1', a, b, b, a);
@@ -233,6 +243,7 @@ const handlers = {
   setVoiceMuted(me, p) {
     run('UPDATE voice_connections SET muted = ? WHERE user_id = ?', p.muted ? 1 : 0, me.id);
     run('UPDATE call_connections SET muted = ? WHERE user_id = ?', p.muted ? 1 : 0, me.id);
+    run('UPDATE quick_voice SET muted = ? WHERE user_id = ?', p.muted ? 1 : 0, me.id);
   },
 
   updateProfile(me, p) {
@@ -544,6 +555,7 @@ const handlers = {
     const count = one('SELECT COUNT(*) AS n FROM voice_connections WHERE channel_id = ? AND user_id <> ?', ch.id, me.id).n;
     if (count >= 5) fail('Ce vocal est complet (5 personnes maximum).', 409);
     run('DELETE FROM call_connections WHERE user_id = ?', me.id);
+    run('DELETE FROM quick_voice WHERE user_id = ?', me.id);
     run('INSERT OR REPLACE INTO voice_connections (user_id, channel_id) VALUES (?, ?)', me.id, ch.id);
   },
 
@@ -574,6 +586,7 @@ const handlers = {
       run('UPDATE call_states SET answered_at = ? WHERE room = ? AND answered_at = 0', now(), room);
     }
     run('DELETE FROM voice_connections WHERE user_id = ?', me.id);
+    run('DELETE FROM quick_voice WHERE user_id = ?', me.id);
     run('INSERT OR REPLACE INTO call_connections (user_id, room, muted) VALUES (?, ?, 0)', me.id, room);
   },
 
@@ -591,6 +604,69 @@ const handlers = {
     const room = callRoom(me.id, peerId);
     run('DELETE FROM call_connections WHERE room = ? AND user_id <> ?', room, me.id);
     finishCall(room);
+  },
+
+  // ----- Salons rapides : petit salon privé (5 personnes max), vocal et chat, supprimé quand il est vide. -----
+  createQuickRoom(me, p) {
+    const name = text(p.name || 'Salon rapide', 1, 24, 'Nom : 1 à 24 caractères.');
+    const id = newId('q');
+    const code = randomBytes(8).toString('base64url').slice(0, 10);
+    run('INSERT INTO quick_rooms (id, code, owner_id, name, locked, created_at) VALUES (?, ?, ?, ?, 0, ?)', id, code, me.id, name, now());
+    run('INSERT INTO quick_members (room_id, user_id, joined_at) VALUES (?, ?, ?)', id, me.id, now());
+    return { id, code };
+  },
+
+  joinQuickRoom(me, p) {
+    const room = one('SELECT * FROM quick_rooms WHERE code = ?', String(p.code ?? '').trim());
+    if (!room) fail('Salon introuvable ou déjà fermé.', 404);
+    if (one('SELECT 1 FROM quick_members WHERE room_id = ? AND user_id = ?', room.id, me.id)) return { id: room.id };
+    if (room.locked) fail('Ce salon est verrouillé par son créateur.', 403);
+    if (one('SELECT COUNT(*) AS n FROM quick_members WHERE room_id = ?', room.id).n >= 5) fail('Ce salon est complet (5 personnes maximum).', 409);
+    run('INSERT INTO quick_members (room_id, user_id, joined_at) VALUES (?, ?, ?)', room.id, me.id, now());
+    return { id: room.id };
+  },
+
+  leaveQuickRoom(me, p) {
+    const roomId = String(p.roomId ?? '');
+    run('DELETE FROM quick_voice WHERE user_id = ? AND room_id = ?', me.id, roomId);
+    run('DELETE FROM quick_members WHERE room_id = ? AND user_id = ?', roomId, me.id);
+    dropEmptyQuickRooms();
+  },
+
+  setQuickRoomLock(me, p) {
+    const room = one('SELECT * FROM quick_rooms WHERE id = ?', String(p.roomId ?? ''));
+    if (!room) fail('Salon introuvable.', 404);
+    if (room.owner_id !== me.id) fail('Seul le créateur du salon peut le verrouiller.', 403);
+    run('UPDATE quick_rooms SET locked = ? WHERE id = ?', p.locked ? 1 : 0, room.id);
+  },
+
+  kickQuickMember(me, p) {
+    const room = one('SELECT * FROM quick_rooms WHERE id = ?', String(p.roomId ?? ''));
+    if (!room) fail('Salon introuvable.', 404);
+    if (room.owner_id !== me.id) fail('Seul le créateur du salon peut retirer quelqu’un.', 403);
+    const target = String(p.userId ?? '');
+    if (target === me.id) fail('Vous ne pouvez pas vous retirer vous-même.', 400);
+    run('DELETE FROM quick_voice WHERE user_id = ? AND room_id = ?', target, room.id);
+    run('DELETE FROM quick_members WHERE room_id = ? AND user_id = ?', room.id, target);
+  },
+
+  sendQuickMessage(me, p) {
+    if (!one('SELECT 1 FROM quick_members WHERE room_id = ? AND user_id = ?', String(p.roomId ?? ''), me.id)) fail('Vous n’êtes pas dans ce salon.', 403);
+    const { content, image } = messageBody(p, 2000);
+    run('INSERT INTO quick_messages (id, room_id, user_id, content, image, created_at) VALUES (?, ?, ?, ?, ?, ?)', newId('qm'), String(p.roomId), me.id, content, image, now());
+  },
+
+  joinQuickVoice(me, p) {
+    const roomId = String(p.roomId ?? '');
+    if (!one('SELECT 1 FROM quick_members WHERE room_id = ? AND user_id = ?', roomId, me.id)) fail('Vous n’êtes pas dans ce salon.', 403);
+    if (one('SELECT COUNT(*) AS n FROM quick_voice WHERE room_id = ? AND user_id <> ?', roomId, me.id).n >= 5) fail('Le vocal est complet.', 409);
+    run('DELETE FROM voice_connections WHERE user_id = ?', me.id);
+    run('DELETE FROM call_connections WHERE user_id = ?', me.id);
+    run('INSERT OR REPLACE INTO quick_voice (user_id, room_id, muted) VALUES (?, ?, 0)', me.id, roomId);
+  },
+
+  leaveQuickVoice(me) {
+    run('DELETE FROM quick_voice WHERE user_id = ?', me.id);
   },
 
   createRole(me, p) {

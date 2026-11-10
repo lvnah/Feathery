@@ -273,6 +273,24 @@ export const callOf = (s) => {
 };
 export const createRole = (serverId, role) => act('createRole', { serverId, ...role });
 export const kickMember = (serverId, userId) => act('kickMember', { serverId, userId });
+// ----- Salons rapides : petit salon privé (vocal et chat), 5 personnes maximum, supprimé quand il est vide. -----
+export const quickRoomOf = (s, roomId) => (s?.quickRooms ?? []).find((r) => r.id === roomId) ?? null;
+export const createQuickRoom = (name) => act('createQuickRoom', { name });
+export const joinQuickRoom = (code) => act('joinQuickRoom', { code });
+export const leaveQuickRoom = (roomId) => act('leaveQuickRoom', { roomId });
+export const setQuickRoomLock = (roomId, locked) => act('setQuickRoomLock', { roomId, locked });
+export const kickQuickMember = (roomId, userId) => act('kickQuickMember', { roomId, userId });
+export const sendQuickMessage = (roomId, content) => act('sendQuickMessage', { roomId, content });
+export const joinQuickVoice = (roomId) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: [...s.voice.filter((v) => v.user_id !== me.id), { user_id: me.id, channel_id: `quick:${roomId}`, muted: false }] }));
+  return act('joinQuickVoice', { roomId });
+};
+export const leaveQuickVoice = () => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => v.user_id !== me.id) }));
+  return act('leaveQuickVoice');
+};
 export const blockUser = (targetId) => act('blockUser', { targetId });
 export const unblockUser = (targetId) => act('unblockUser', { targetId });
 export const reportUser = (targetId, reason, serverId = null) => act('reportUser', { targetId, reason, serverId });

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { digestToken, revokeSessions, userFromToken } from './auth.js';
 import { buildSnapshot } from './sync.js';
-import { HttpError, login, logout, purgeNonPlusGifs, register, runAction, verifyEmailToken } from './actions.js';
+import { HttpError, dropEmptyQuickRooms, login, logout, purgeNonPlusGifs, register, runAction, verifyEmailToken } from './actions.js';
 import { publicUser } from './sync.js';
 import { db } from './db.js';
 import { getVersion, bumpVersion, onVersion, offVersion } from './version.js';
@@ -24,6 +24,11 @@ setInterval(() => {
   const cutoff = Date.now() - VOICE_GRACE_MS;
   db.prepare('DELETE FROM voice_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(cutoff);
   db.prepare('DELETE FROM call_connections WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(cutoff);
+  db.prepare('DELETE FROM quick_voice WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(cutoff);
+  // Salon rapide : un membre absent depuis plus de 10 minutes quitte le salon ; un salon vide disparaît.
+  const quickCutoff = Date.now() - 10 * 60_000;
+  db.prepare('DELETE FROM quick_members WHERE user_id IN (SELECT id FROM users WHERE last_activity < ?)').run(quickCutoff);
+  dropEmptyQuickRooms();
 }, 15_000).unref();
 db.prepare("UPDATE users SET name_color = '' WHERE is_admin = 0 AND name_color IN ('#dc2626', '#ef4444', '#be123c', 'rainbow-red')").run();
 // Panneau d'administration : accès séparé des comptes. Login = ADMIN_LOGIN (admin par défaut), mot de passe = ADMIN_PASSWORD du serveur.
@@ -273,7 +278,8 @@ async function handleApi(req, res, path) {
     const body = await readJson(req);
     // Même salon (espace ou appel privé) : sinon refusé.
     const roomOf = (id) => db.prepare('SELECT channel_id AS room FROM voice_connections WHERE user_id = ?').get(id)?.room
-      ?? db.prepare('SELECT room FROM call_connections WHERE user_id = ?').get(id)?.room ?? null;
+      ?? db.prepare('SELECT room FROM call_connections WHERE user_id = ?').get(id)?.room
+      ?? (() => { const q = db.prepare('SELECT room_id FROM quick_voice WHERE user_id = ?').get(id); return q ? `quick:${q.room_id}` : null; })();
     const mine = roomOf(me.id);
     const theirs = roomOf(String(body.toId ?? ''));
     if (!mine || mine !== theirs) throw new HttpError(403, 'Pas dans le même salon vocal.');

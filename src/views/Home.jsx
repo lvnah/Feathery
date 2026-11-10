@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMe, serversOf, friendsOf, membersOf, myVoice, searchUsers } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, Icon, ServerIcon } from '../components/ui';
-import { serverUnread, leaveServer, logout } from '../lib/store';
+import { serverUnread, leaveServer, logout, createQuickRoom } from '../lib/store';
 import { run } from './ServerView';
 import Logo from '../components/Logo';
 import SpaceCard from '../components/SpaceCard';
@@ -19,7 +19,7 @@ const PARTICLES = [
   { left: '92%', size: 4, delay: '9s', duration: '19s' },
 ];
 
-function HeroBanner({ onJoin, onCreate }) {
+function HeroBanner({ onJoin, onCreate, onQuick }) {
   // L'animation d'arrivée ne se joue qu'une fois par session : les retours sur l'accueil sont immédiats.
   const [played] = useState(() => { try { return sessionStorage.getItem('hevenly:hero') === '1'; } catch { return false; } });
   useEffect(() => { try { sessionStorage.setItem('hevenly:hero', '1'); } catch { /* navigation privée */ } }, []);
@@ -78,6 +78,9 @@ function HeroBanner({ onJoin, onCreate }) {
           </button>
           <button onClick={onCreate} className="hero-cta btn-ghost !rounded-full !px-6">
             Créer un espace
+          </button>
+          <button onClick={onQuick} className="hero-cta btn-ghost !rounded-full !px-6">
+            Salon rapide
           </button>
         </div>
       </div>
@@ -172,7 +175,26 @@ export default function Home() {
       <div className="thin-scroll flex min-h-0 flex-1 gap-4 overflow-y-auto pb-2">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {/* Bannière de bienvenue */}
-          <HeroBanner onJoin={() => openModal('join')} onCreate={() => openModal('createServer')} />
+          <HeroBanner onJoin={() => openModal('join')} onCreate={() => openModal('createServer')} onQuick={async () => {
+            try {
+              const res = await createQuickRoom('Salon rapide');
+              go({ name: 'quick', roomId: res.id });
+            } catch (err) {
+              toast(err.message);
+            }
+          }} />
+          {(s.quickRooms ?? []).length > 0 && (
+            <section className="panel flex shrink-0 flex-col gap-3 p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Salons rapides</p>
+              <div className="flex flex-wrap gap-2">
+                {s.quickRooms.map((r) => (
+                  <button key={r.id} type="button" onClick={() => go({ name: 'quick', roomId: r.id })} className="rounded-2xl border border-slate-200 bg-surface px-4 py-2 text-left text-sm font-bold text-slate-900 hover:bg-slate-100">
+                    {r.name} <span className="font-normal text-slate-400">· {r.members.length}/5</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Espaces ou tableau de bord vide */}
           <section className="panel flex shrink-0 flex-col p-6">
