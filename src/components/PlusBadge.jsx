@@ -17,14 +17,15 @@ export default function PlusBadge({ className = '', color = '' }) {
   );
 }
 
-// Couronne blanche devant le pseudo d'un administrateur.
+// Étoile blanche qui scintille devant le pseudo d'un administrateur, centrée sur la ligne du nom.
 export function AdminCrown({ user, className = '' }) {
   if (!user?.is_admin) return null;
   return (
-    <svg viewBox="0 0 24 24" aria-label="Administrateur" role="img" className={`inline-block h-3.5 w-3.5 shrink-0 ${className}`}>
-      <title>Administrateur</title>
-      <path fill="#ffffff" d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z" />
-    </svg>
+    <span title="Administrateur" role="img" aria-label="Administrateur" className={`admin-star inline-flex shrink-0 items-center self-center ${className}`}>
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
+        <path fill="#ffffff" d="M12 1.5c.6 5.2 3.3 7.9 10.5 10.5-7.2 2.6-9.9 5.3-10.5 10.5-.6-5.2-3.3-7.9-10.5-10.5C8.7 9.4 11.4 6.7 12 1.5z" />
+      </svg>
+    </span>
   );
 }
 

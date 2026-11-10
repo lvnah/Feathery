@@ -6,7 +6,6 @@ import { RichText } from '../components/Mentions';
 import PlusBadge, { AdminCrown, RoleBadge } from '../components/PlusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { run } from './ServerView';
-import PageBanner from '../components/PageBanner';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
 import { blockUser, callOf, joinCall } from '../lib/store';
@@ -39,15 +38,7 @@ export default function MessagesView({ withId }) {
     .sort((a, b) => (b.last?.created_at || 0) - (a.last?.created_at || 0) || a.user.pseudo.localeCompare(b.user.pseudo));
 
   const requests = unread.requests.map((id) => getUser(s, id)).filter(Boolean);
-  // Les trois conversations avec le plus de messages : une petite flamme dans la liste.
-  const messageCount = new Map();
-  for (const d of s.dms) {
-    if (d.kind === 'call') continue;
-    const peer = d.from === me.id ? d.to : d.from;
-    messageCount.set(peer, (messageCount.get(peer) || 0) + 1);
-  }
-  const topActive = new Set([...messageCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).filter(([, n]) => n > 0).map(([id]) => id));
-  const partner = withId ? getUser(s, withId) : null;
+    const partner = withId ? getUser(s, withId) : null;
   const thread = partner
     ? s.dms.filter((d) => (d.from === me.id && d.to === partner.id) || (d.from === partner.id && d.to === me.id)).sort((a, b) => a.created_at - b.created_at)
     : [];
@@ -118,7 +109,6 @@ export default function MessagesView({ withId }) {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-      <PageBanner icon="message" title="Messages privés" subtitle={`${conversations.length} conversation(s)`} />
     <div className="flex min-h-0 min-w-0 flex-1 gap-4">
       <aside className={`panel thin-scroll w-full flex-col overflow-y-auto p-5 md:flex md:w-80 md:shrink-0 ${withId ? 'hidden' : 'flex'}`}>
         <h2 className="px-2 pb-4 text-xl font-extrabold">Messages privés</h2>
@@ -145,7 +135,7 @@ export default function MessagesView({ withId }) {
               </button>
               <span className="min-w-0 flex-1">
                 <span onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="inline-block max-w-full truncate font-bold hover:underline" style={nameStyle(user)}>{user.pseudo}</span>
-                {topActive.has(user.id) && <Icon name="flame" title="Une de vos conversations les plus actives" className="ml-1.5 inline h-3.5 w-3.5 align-[-2px] text-amber-400" />}
+                <RoleBadge user={user} />
                 <span className="block truncate text-xs text-slate-500">{last ? (last.content || (last.image ? 'Photo' : '')) : statusLabel(user)}</span>
               </span>
               <CountBadge n={unread.dms[user.id] || 0} />
