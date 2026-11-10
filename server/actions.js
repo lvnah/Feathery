@@ -124,6 +124,8 @@ const IMAGE_LIMITS = { avatar: 60_000, banner: 160_000, icon: 60_000, espace: 1_
 // GIF animés (PLUS) : limites en caractères de la data URL (≈ 9 Mo et 12 Mo de fichier).
 const GIF_LIMITS = { avatar: 12_000_000, banner: 17_000_000, espace: 17_000_000 };
 // Couleurs de pseudo : simples pour tous, davantage pour les PLUS.
+// Couleurs possibles du badge PLUS (le rouge est exclu : il désigne l'administration).
+const BADGE_COLORS = ['', 'or', 'emeraude', 'ciel', 'violet', 'rose', 'orange', 'turquoise', 'indigo', 'argent', 'jaune', 'lime'];
 const NAME_COLORS_BASIC = ['#111827', '#0d9488', '#2563eb', '#16a34a', '#9333ea', '#ea580c'];
 const NAME_COLORS_PLUS = [...NAME_COLORS_BASIC, '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#b45309', '#0f766e', '#7c3aed', '#4338ca', '#1d4ed8', '#047857', '#c026d3', '#854d0e', 'rainbow', 'sunset', 'ocean', 'aurora', 'candy', 'neon', 'lagoon', 'ruby', 'lime', 'violet', 'chameleon', 'ice', 'fire', 'forest', 'gold', 'galaxy', 'sakura', 'mint'];
 // Icône d'espace : une image téléchargée, ou une icône prédéfinie 'preset:iN' (N de 0 à 6, même thème que les bannières).
@@ -240,6 +242,11 @@ const handlers = {
       const allowed = me.is_plus ? NAME_COLORS_PLUS : NAME_COLORS_BASIC;
       if (p.nameColor !== '' && !allowed.includes(p.nameColor)) fail(me.is_plus ? 'Couleur inconnue.' : 'Cette couleur est réservée aux membres PLUS.', 403);
       run('UPDATE users SET name_color = ? WHERE id = ?', p.nameColor, me.id);
+    }
+    if (p.badgeColor !== undefined) {
+      if (!BADGE_COLORS.includes(String(p.badgeColor))) fail('Couleur de badge inconnue.');
+      if (!me.is_plus && p.badgeColor !== '') fail('La couleur du badge est réservée aux membres PLUS.', 403);
+      run('UPDATE users SET badge_color = ? WHERE id = ?', String(p.badgeColor), me.id);
     }
     if (p.customStatus !== undefined) {
       const cs = String(p.customStatus).trim();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { blockUser, getMe, getUser, friendshipBetween, isFriend, sendFriendRequest, updateProfile } from '../lib/store';
 import { useStore, useUI, Avatar, Banner, EmptyState, ErrorLine, Icon } from '../components/ui';
-import { BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
+import { BADGE_COLORS, badgeGradient, BANNER_GRADIENTS, LOGO_CLASSIC, PLUS_BANNER_PRESETS, bannerLogoLayer, bannerStyle, fullName, isOnline, statusLabel, statusColor, nameStyle, RAINBOW_GRADIENTS, RAINBOW_LABELS } from '../lib/util';
 import { fileToDataUrl, readGif, AVATAR_OPTS, BANNER_OPTS, GIF_MAX_AVATAR, GIF_MAX_BANNER } from '../lib/images';
 import { NAME_COLORS_BASIC, NAME_COLORS_PLUS } from '../lib/util';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
@@ -29,6 +29,7 @@ function OwnProfile() {
   const [bio, setBio] = useState(me.bio || '');
   const [country, setCountry] = useState(me.country || '');
   const [nameColor, setNameColor] = useState(me.name_color || '');
+  const [badgeColor, setBadgeColor] = useState(me.badge_color || '');
   const [banner, setBanner] = useState(me.banner?.type === 'image' || me.banner?.type === 'preset' ? me.banner : { type: 'gradient', index: me.banner?.index ?? 0 });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -55,7 +56,7 @@ function OwnProfile() {
     setError('');
     setBusy(true);
     try {
-      await updateProfile({ pseudo, tag: me.is_plus ? tag : undefined, avatar, bio, banner, country, nameColor });
+      await updateProfile({ pseudo, tag: me.is_plus ? tag : undefined, avatar, bio, banner, country, nameColor, ...(me.is_plus ? { badgeColor } : {}) });
       // Enregistré : retour sur la vue de son profil.
       go({ name: 'profile', userId: me.id });
     } catch (err) {
@@ -124,6 +125,27 @@ function OwnProfile() {
               {!me.is_plus && <span className="text-xs text-slate-400">D’autres couleurs sont réservées aux membres PLUS.</span>}
             </Field>
 
+            {me.is_plus && (
+              <Field label="Couleur du badge PLUS">
+                <div className="flex flex-wrap items-center gap-2">
+                  {Object.entries(BADGE_COLORS).map(([key, c]) => (
+                    <button
+                      key={key || 'default'}
+                      type="button"
+                      title={c.label}
+                      aria-label={`Badge ${c.label}`}
+                      onClick={() => setBadgeColor(key)}
+                      className={`flex h-7 w-7 items-center justify-center rounded-full ${badgeColor === key ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
+                    >
+                      <span className="h-6 w-6 rounded-full" style={{ background: badgeGradient(key) }} />
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-600">
+                  Aperçu : <PlusBadge color={badgeColor} />
+                </div>
+              </Field>
+            )}
             <Field label="Pays (Europe)">
               <CountrySelect value={country} onChange={setCountry} />
             </Field>
@@ -313,7 +335,7 @@ function GamesBlock({ user, editable }) {
           {games.map((g) => (
             <span key={`${g.game}-${g.platform}`} className="flex flex-col rounded-xl bg-surface px-3 py-2 shadow-soft">
               <span className="min-w-0 break-words text-sm font-extrabold">{g.game}</span>
-              {(g.platform || g.rank) && <span className="break-words text-xs text-slate-500">{[g.platform, g.rank].filter(Boolean).join(' · ')}</span>}
+              {g.rank && <span className="break-words text-xs text-slate-500">{g.rank}</span>}
             </span>
           ))}
         </span>

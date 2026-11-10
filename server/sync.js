@@ -31,6 +31,7 @@ export function publicUser(u) {
     is_admin: u.is_admin ?? 0,
     country: u.country ?? '',
     name_color: u.name_color ?? '',
+    badge_color: u.badge_color ?? '',
     custom_status: u.custom_status ?? '',
     status: effectiveStatus(u),
     banner:
