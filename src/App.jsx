@@ -21,6 +21,8 @@ import FriendsView from './views/FriendsView';
 import CommunityView from './views/CommunityView';
 import ProfileView from './views/ProfileView';
 import AdminPanel from './views/AdminPanel';
+import QuickRoomView from './views/QuickRoomView';
+import { joinQuickRoom } from './lib/store';
 
 // Routage par état. La vue « espace » s'affiche plein écran (sans sidebar), comme la capture.
 // Téléphone ou tablette (y compris iPad) : utilisé pour l'icône dans les mini-profils.
@@ -84,6 +86,22 @@ export default function App() {
       window.removeEventListener('dragstart', noImageDrag, true);
     };
   }, []);
+  // Salon rapide (/salon/CODE) : gardé jusqu'à la connexion, puis on y entre.
+  useEffect(() => {
+    const m = window.location.pathname.match(/^\/salon\/([A-Za-z0-9_-]+)\/?$/);
+    if (m) {
+      sessionStorage.setItem('hevenly:quickjoin', m[1]);
+      window.history.replaceState(null, '', '/');
+    }
+  }, []);
+  useEffect(() => {
+    const code = me && sessionStorage.getItem('hevenly:quickjoin');
+    if (!code) return;
+    sessionStorage.removeItem('hevenly:quickjoin');
+    joinQuickRoom(code)
+      .then((res) => setView({ name: 'quick', roomId: res.id }))
+      .catch((err) => toast(err.message));
+  }, [me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Invitation retenue avant la connexion : on rejoint l'espace dès que la session est ouverte.
   useEffect(() => {
     const code = me && sessionStorage.getItem('hevenly:join');
@@ -268,6 +286,7 @@ export default function App() {
         {view.name === 'plus' && <PlusView />}
         {view.name === 'settings' && <SettingsView />}
         {view.name === 'community' && <CommunityView />}
+        {view.name === 'quick' && <QuickRoomView key={view.roomId} roomId={view.roomId} />}
         {view.name === 'profile' && <ProfileView key={`${view.userId}-${!!view.edit}`} userId={view.userId} edit={!!view.edit} goBack={goHome} />}
       </Layout>
     );

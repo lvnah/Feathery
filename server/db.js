@@ -143,12 +143,16 @@ addColumn('users', 'last_input', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('dms', 'image', "TEXT NOT NULL DEFAULT ''");
 // Type d'entrée : '' = message, 'call' = trace d'appel (durée ou appel manqué).
 addColumn('dms', 'kind', "TEXT NOT NULL DEFAULT ''");
+// Salons rapides : petit salon privé (5 personnes max), vocal et chat, supprimé quand il est vide.
+db.exec(`CREATE TABLE IF NOT EXISTS quick_rooms (id TEXT PRIMARY KEY, code TEXT NOT NULL UNIQUE, owner_id TEXT NOT NULL, name TEXT NOT NULL, locked INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)`);
+db.exec(`CREATE TABLE IF NOT EXISTS quick_members (room_id TEXT NOT NULL, user_id TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY (room_id, user_id))`);
+db.exec(`CREATE TABLE IF NOT EXISTS quick_messages (id TEXT PRIMARY KEY, room_id TEXT NOT NULL, user_id TEXT NOT NULL, content TEXT NOT NULL, image TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_quick_messages_room ON quick_messages (room_id, created_at)`);
+db.exec(`CREATE TABLE IF NOT EXISTS quick_voice (user_id TEXT PRIMARY KEY, room_id TEXT NOT NULL, muted INTEGER NOT NULL DEFAULT 0)`);
 // Liens cliquables dans les messages (réglage du compte).
 addColumn('users', 'links_on', 'INTEGER NOT NULL DEFAULT 1');
 // Couleur du badge PLUS (vide = couleur par défaut ; jamais le rouge, réservé à l'administration).
 addColumn('users', 'badge_color', "TEXT NOT NULL DEFAULT ''");
-// Plateforme du jeu (Steam, Epic, PlayStation…).
-addColumn('user_games', 'platform', "TEXT NOT NULL DEFAULT ''");
 // Suivi d'un appel en cours : qui l'a lancé, quand, et quand il a été décroché (0 = pas décroché).
 db.exec(`CREATE TABLE IF NOT EXISTS call_states (room TEXT PRIMARY KEY, caller_id TEXT NOT NULL, started_at INTEGER NOT NULL, answered_at INTEGER NOT NULL DEFAULT 0)`);
 // Statistiques de jeux affichées dans le profil (3 maximum par membre).
@@ -162,6 +166,8 @@ CREATE TABLE IF NOT EXISTS user_games (
   PRIMARY KEY (user_id, position)
 );
 `);
+// Plateforme du jeu (Steam, Epic, PlayStation…).
+addColumn('user_games', 'platform', "TEXT NOT NULL DEFAULT ''");
 db.exec(`
 CREATE TABLE IF NOT EXISTS dm_reads (user_id TEXT NOT NULL, peer_id TEXT NOT NULL, read_at INTEGER NOT NULL, PRIMARY KEY (user_id, peer_id));
 CREATE TABLE IF NOT EXISTS channel_reads (user_id TEXT NOT NULL, channel_id TEXT NOT NULL, read_at INTEGER NOT NULL, PRIMARY KEY (user_id, channel_id));

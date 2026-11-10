@@ -106,6 +106,21 @@ export function buildSnapshot(me) {
     `call:${me.id}|%`, `call:%|${me.id}`,
   );
   voice.push(...calls.filter((c) => notHidden(c.user_id)));
+  // Salons rapides dont je suis membre : membres, messages récents et vocal.
+  const quickRooms = all('SELECT r.* FROM quick_rooms r JOIN quick_members m ON m.room_id = r.id WHERE m.user_id = ? ORDER BY r.created_at', me.id);
+  const qIds = quickRooms.map((r) => r.id);
+  const quickMembers = qIds.length ? all(`SELECT room_id, user_id FROM quick_members WHERE room_id IN (${marks(qIds)})`, ...qIds).filter((m) => notHidden(m.user_id)) : [];
+  const quickMessages = qIds.length ? all(
+    `SELECT id, room_id, user_id, content, image, created_at FROM (
+       SELECT *, ROW_NUMBER() OVER (PARTITION BY room_id ORDER BY created_at DESC) AS rn
+       FROM quick_messages WHERE room_id IN (${marks(qIds)})
+     ) WHERE rn <= 100 ORDER BY created_at`,
+    ...qIds,
+  ).filter((m) => notHidden(m.user_id)) : [];
+  if (qIds.length) {
+    const quickVoice = all(`SELECT user_id, 'quick:' || room_id AS channel_id, muted FROM quick_voice WHERE room_id IN (${marks(qIds)})`, ...qIds);
+    voice.push(...quickVoice.filter((v) => notHidden(v.user_id)));
+  }
 
   // Utilisateurs visibles : moi + membres de mes espaces + relations (amis, DM, vocal).
   const ids = new Set([me.id]);
@@ -113,6 +128,8 @@ export function buildSnapshot(me) {
   friendships.forEach((f) => ids.add(f.from_id).add(f.to_id));
   dms.forEach((d) => ids.add(d.from_id).add(d.to_id));
   voice.forEach((v) => ids.add(v.user_id));
+  quickMembers.forEach((m) => ids.add(m.user_id));
+  quickMessages.forEach((m) => ids.add(m.user_id));
   const uIds = [...ids];
   const users = all(`SELECT * FROM users WHERE id IN (${marks(uIds)})`, ...uIds);
   // Espaces d'un membre visibles par ce viewer : seulement les espaces publics ou ceux où je suis aussi.
@@ -193,5 +210,7 @@ export function buildSnapshot(me) {
     // Espaces publics (liste « Communauté ») : sans code d'invitation.
     communities: communities.map((c) => ({ ...c, is_member: ids_member.has(c.id) })),
     voice: voice.map((v) => ({ user_id: v.user_id, channel_id: v.channel_id, muted: !!v.muted })),
+    quickRooms: quickRooms.map((r) => ({ id: r.id, code: r.code, name: r.name, owner_id: r.owner_id, locked: !!r.locked, members: quickMembers.filter((m) => m.room_id === r.id).map((m) => m.user_id) })),
+    quickMessages: quickMessages.map((m) => ({ id: m.id, room_id: m.room_id, user_id: m.user_id, content: m.content, image: m.image || '', created_at: m.created_at })),
   };
 }
