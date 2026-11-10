@@ -4,7 +4,10 @@
 //  - soit TURN_USERNAME et TURN_PASSWORD (identifiants fournis par un service TURN géré).
 import { createHmac } from 'node:crypto';
 
-const STUN = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+// STUN : par défaut les serveurs publics de Google ; STUN_URLS permet d'en choisir d'autres.
+const STUN_DEFAULT = ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'];
+const STUN_LIST = (process.env.STUN_URLS || '').split(',').map((u) => u.trim()).filter(Boolean);
+const STUN = [{ urls: STUN_LIST.length ? STUN_LIST : STUN_DEFAULT }];
 const TTL_SECONDS = 12 * 3600;
 
 export function iceServersFor(userId) {
