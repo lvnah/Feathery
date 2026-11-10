@@ -6,6 +6,7 @@ import {
 } from '../lib/store';
 import { useStore, useUI, Avatar, CountBadge, EmptyState, ErrorLine, Icon, ServerIcon, Modal, SpaceBanner, TimeAgo } from '../components/ui';
 import PlusBadge, { RoleBadge } from '../components/PlusBadge';
+import SpaceHero from '../components/SpaceHero';
 import VoiceScreen from '../components/VoiceScreen';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
@@ -261,44 +262,40 @@ export default function ServerView({ serverId, channelId, goHome }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
       {/* Barre d'en-tête de l'espace */}
-      <header className="panel flex flex-wrap items-center gap-4 rounded-[2rem] px-5 py-3 max-lg:gap-2 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2">
-        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu de l’espace" className="ml-auto hidden rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 max-lg:block">
-          Menu
-        </button>
-        <div className="flex min-w-0 items-center gap-3" onContextMenu={(e) => {
+      <SpaceHero
+        server={server}
+        className="h-28 shrink-0 max-lg:h-20"
+        onContextMenu={(e) => {
           if (isOwner) { e.preventDefault(); return; }
           openMenu(e, [{ label: 'Quitter l’espace', danger: true, onClick: () => { if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); } }]);
-        }}>
-          <ServerIcon server={server} className="h-12 w-12" />
-          {/* Bannière de l'espace : rectangle arrondi à côté de la photo. */}
-          {server.banner && <SpaceBanner value={server.banner} className="h-12 w-28 shrink-0 rounded-2xl max-lg:hidden" />}
-          <div className="min-w-0">
-            <p className="truncate text-lg font-extrabold">{server.name}</p>
-            <span className="pill !bg-brand-50 !text-brand-700">
-              <span className="h-2 w-2 rounded-full bg-brand-500" />
-              <span className="max-lg:hidden">Hub Communautaire Actif</span>
-            </span>
-          </div>
-        </div>
-
-
-        <div className="flex items-center gap-2">
-          {!isOwner && (
-            <button onClick={() => { if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); }} className="btn-danger !rounded-full !py-2.5">
-              Quitter
+        }}
+        actions={(
+          <>
+            <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu de l’espace" className="hidden rounded-2xl bg-white/90 px-4 py-2 text-sm font-bold text-slate-900 max-lg:block">
+              Menu
             </button>
-          )}
-          {isOwner && (
-            <button onClick={() => openModal('espace-settings', { serverId })} className="btn-ghost !rounded-full !py-2.5 max-lg:hidden">
-              <Icon name="settings" className="h-4 w-4" />
-              Paramètres
+            {!isOwner && (
+              <button onClick={() => { if (window.confirm(`Quitter « ${server.name} » ?`)) run(toast, () => leaveServer(serverId)).then((ok) => ok && goHome()); }} className="btn-danger !rounded-full !py-2.5 max-lg:hidden">
+                Quitter
+              </button>
+            )}
+            {isOwner && (
+              <button onClick={() => openModal('espace-settings', { serverId })} className="btn-ghost !rounded-full !py-2.5 max-lg:hidden">
+                <Icon name="settings" className="h-4 w-4" />
+                Paramètres
+              </button>
+            )}
+            <button onClick={() => openModal('invite', { serverId })} className="btn-soft !rounded-full !py-2.5 max-lg:hidden">
+              Inviter
             </button>
-          )}
-          <button onClick={() => openModal('invite', { serverId })} className="btn-primary !rounded-full !py-2.5 max-lg:hidden">
-            Inviter
-          </button>
-        </div>
-      </header>
+          </>
+        )}
+      >
+        <span className="pill !bg-white/15 !text-white max-lg:hidden">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          Hub Communautaire Actif
+        </span>
+      </SpaceHero>
 
       {/* Salons : tuiles toujours visibles. Un vocal montre qui est dedans (photos) et sa capacité. */}
       <nav className="panel thin-scroll flex items-stretch gap-3 overflow-x-auto p-3 max-lg:gap-2 max-lg:p-1.5">

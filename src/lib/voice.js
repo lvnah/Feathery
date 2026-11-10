@@ -274,11 +274,29 @@ function micConstraints(input) {
   return { audio: { deviceId: input ? { ideal: input } : undefined, echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false };
 }
 
+// Micro demandé : si le micro choisi n'existe plus (débranché, identifiant périmé), on prend le micro par défaut.
+export async function getMicStream(input) {
+  try {
+    return await navigator.mediaDevices.getUserMedia(micConstraints(input));
+  } catch (err) {
+    if (!input || !['NotFoundError', 'OverconstrainedError', 'NotReadableError'].includes(err?.name)) throw err;
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ ...getAudioPrefs(), input: '' }));
+    return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  }
+}
+
+// Préviens quand un micro est branché ou débranché (la liste se met à jour toute seule).
+export function subscribeAudioDevices(fn) {
+  const md = navigator.mediaDevices;
+  if (!md?.addEventListener) return () => {};
+  md.addEventListener('devicechange', fn);
+  return () => md.removeEventListener('devicechange', fn);
+}
+
 async function start(channelId, myId) {
   let stream;
   try {
-    const { input } = getAudioPrefs();
-    stream = await navigator.mediaDevices.getUserMedia(micConstraints(input));
+    stream = await getMicStream(getAudioPrefs().input);
   } catch (err) {
     onError(micErrorMessage(err));
     return false;
@@ -340,7 +358,7 @@ function micErrorMessage(err) {
 // Changer de micro pendant l'appel : on remplace la piste envoyée à chaque correspondant.
 async function switchInput(input) {
   if (!session) return;
-  const fresh = await navigator.mediaDevices.getUserMedia(micConstraints(input)).catch(() => null);
+  const fresh = await getMicStream(input).catch(() => null);
   if (!fresh) return;
   const track = fresh.getAudioTracks()[0];
   track.enabled = !muted;
@@ -359,13 +377,20 @@ export function setAudioPrefs(patch) {
   if ('input' in patch) switchInput(patch.input);
 }
 
-// Liste des micros et haut-parleurs (les noms n'apparaissent qu'après l'autorisation du micro).
+// Micros et haut-parleurs présents maintenant. Les noms n'apparaissent qu'après l'autorisation du micro.
 export async function listAudioDevices() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
-  stream?.getTracks().forEach((t) => t.stop());
   const list = await navigator.mediaDevices.enumerateDevices();
   return {
     inputs: list.filter((d) => d.kind === 'audioinput'),
     outputs: list.filter((d) => d.kind === 'audiooutput'),
+    named: list.some((d) => d.label), // vrai une fois l'accès au micro accordé
   };
+}
+
+// Demande l'accès au micro (pour voir les noms des appareils), puis le coupe aussitôt.
+export async function grantMicAccess() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch((err) => {
+    throw new Error(micErrorMessage(err));
+  });
+  stream.getTracks().forEach((t) => t.stop());
 }

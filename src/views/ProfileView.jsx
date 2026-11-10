@@ -116,6 +116,11 @@ function OwnProfile() {
                   />
                 ))}
               </div>
+              {/* Aperçu en direct : le pseudo s'affiche avec la couleur choisie. */}
+              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Aperçu</span>
+                <span className="min-w-0 break-all text-base font-extrabold" style={nameStyle({ name_color: nameColor })}>{pseudo || me.pseudo}</span>
+              </div>
               {!me.is_plus && <span className="text-xs text-slate-400">D’autres couleurs sont réservées aux membres PLUS.</span>}
             </Field>
 
@@ -225,7 +230,9 @@ function PublicProfile({ user, goBack }) {
               <Avatar user={user} size="xl" showStatus className="-mt-12 ring-4 ring-surface" />
               <div className="min-w-0">
                 <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-extrabold">
-                  <span className="truncate" style={nameStyle(user)}>{user.pseudo}</span> <span className="text-base font-semibold text-slate-400">#{user.tag}</span>
+                  <span className="min-w-0 break-all" style={nameStyle(user)}>{user.pseudo}</span>
+                  {/* Tag : une pastille qui s'affiche en entier, sans être coupée. */}
+                  <span className="shrink-0 whitespace-nowrap rounded-xl bg-slate-100 px-2.5 py-0.5 font-mono text-sm font-bold tracking-wide text-slate-600">#{user.tag}</span>
                   <RoleBadge user={user} />
                   {user.country ? <Flag code={user.country} name={countryName(user.country)} /> : null}
                 </h2>
