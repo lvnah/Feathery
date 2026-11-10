@@ -166,7 +166,7 @@ export function buildSnapshot(me) {
     },
     stats: { total: counts.total, online: counts.online },
     me: { ...publicUser(me), settings: mySettings },
-    users: users.map((u) => ({ ...publicUser(u), ...(u.id === me.id ? { settings: mySettings } : {}), games: gameRows.filter((g) => g.user_id === u.id).map((g) => ({ game: g.game, rank: g.rank })), spaces: spaceRows.filter((x) => x.user_id === u.id).map((x) => ({ id: x.id, name: x.name, icon: x.icon })) })),
+    users: users.map((u) => ({ ...publicUser(u), ...(u.id === me.id ? { settings: mySettings } : {}), games: gameRows.filter((g) => g.user_id === u.id).map((g) => ({ game: g.game, rank: g.rank, platform: g.platform || '' })), spaces: spaceRows.filter((x) => x.user_id === u.id).map((x) => ({ id: x.id, name: x.name, icon: x.icon })) })),
     servers: servers.map((s) => ({
       id: s.id,
       name: s.name,
@@ -188,7 +188,7 @@ export function buildSnapshot(me) {
     messages: (() => { const gifs = gifUrls(messages.map((m) => m.image)); return messages.map((m) => ({ ...m, gif: gifs.has(m.image) })); })(),
     friendships: friendships.map((f) => ({ id: f.id, from: f.from_id, to: f.to_id, status: f.status })),
     hiddenDmPeers: [...hiddenSince.keys()],
-    dms: (() => { const gifs = gifUrls(dms.map((d) => d.image)); return dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, image: d.image || '', gif: gifs.has(d.image), created_at: d.created_at, status: d.status })); })(),
+    dms: (() => { const gifs = gifUrls(dms.map((d) => d.image)); return dms.map((d) => ({ id: d.id, from: d.from_id, to: d.to_id, content: d.content, image: d.image || '', kind: d.kind || '', gif: gifs.has(d.image), created_at: d.created_at, status: d.status })); })(),
     // Espaces publics (liste « Communauté ») : sans code d'invitation.
     communities: communities.map((c) => ({ ...c, is_member: ids_member.has(c.id) })),
     voice: voice.map((v) => ({ user_id: v.user_id, channel_id: v.channel_id, muted: !!v.muted })),

@@ -141,6 +141,12 @@ addColumn('messages', 'image', "TEXT NOT NULL DEFAULT ''");
 // Dernière activité de saisie (souris, clavier, toucher) : au-delà de 15 minutes, le membre passe absent.
 addColumn('users', 'last_input', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('dms', 'image', "TEXT NOT NULL DEFAULT ''");
+// Type d'entrée : '' = message, 'call' = trace d'appel (durée ou appel manqué).
+addColumn('dms', 'kind', "TEXT NOT NULL DEFAULT ''");
+// Plateforme du jeu (Steam, Epic, PlayStation…).
+addColumn('user_games', 'platform', "TEXT NOT NULL DEFAULT ''");
+// Suivi d'un appel en cours : qui l'a lancé, quand, et quand il a été décroché (0 = pas décroché).
+db.exec(`CREATE TABLE IF NOT EXISTS call_states (room TEXT PRIMARY KEY, caller_id TEXT NOT NULL, started_at INTEGER NOT NULL, answered_at INTEGER NOT NULL DEFAULT 0)`);
 // Statistiques de jeux affichées dans le profil (3 maximum par membre).
 db.exec(`
 CREATE TABLE IF NOT EXISTS user_games (

@@ -1,3 +1,4 @@
+import { GAME_CATALOG, PLATFORMS, searchGames } from '../lib/games';
 import { useState } from 'react';
 import { blockUser, createChannel, createServer, getMe, getUser, joinServer, regenerateInvite, reportUser, updateChannel, setChannelReadonly, setGames } from '../lib/store';
 import { Modal, Avatar, Banner, ErrorLine, Icon, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
@@ -321,29 +322,81 @@ function InstallModal({ platform: os, onClose }) {
   );
 }
 
+// Mes jeux : recherche dans le catalogue (Steam, Epic, PlayStation…), ou saisie d'un jeu absent du catalogue.
 function GamesModal({ onClose }) {
   const s = useStore();
-  const { toast } = useUI();
   const me = getMe(s);
-  const [rows, setRows] = useState(() => (me.games ?? []).map((g) => ({ game: g.game, rank: g.rank })));
+  const [rows, setRows] = useState(() => (me.games ?? []).map((g) => ({ game: g.game, platform: g.platform || '', rank: g.rank || '' })));
+  const [q, setQ] = useState('');
+  const [platform, setPlatform] = useState('');
   const { error, busy, submit } = useSubmit(async () => {
-    await setGames(rows.filter((r) => r.game.trim()).map((r) => ({ game: r.game, rank: r.rank })));
+    await setGames(rows.filter((r) => r.game.trim()).map((r) => ({ game: r.game, platform: r.platform, rank: r.rank })));
     onClose();
   });
+  const MAX = 6;
+  const full = rows.length >= MAX;
+  const add = (game, plat) => {
+    if (full || rows.some((r) => r.game === game && r.platform === plat)) return;
+    setRows((cur) => [...cur, { game, platform: plat, rank: '' }]);
+  };
+  const results = searchGames(q, platform).slice(0, 30);
+  const exact = q.trim() && GAME_CATALOG.some((g) => g.name.toLowerCase() === q.trim().toLowerCase());
   const update = (i, patch) => setRows((cur) => cur.map((r, k) => (k === i ? { ...r, ...patch } : r)));
   return (
-    <Modal open title="Mes jeux" onClose={onClose}>
+    <Modal open title="Mes jeux" onClose={onClose} width="max-w-xl">
       <form onSubmit={submit} className="flex flex-col gap-4">
-        {rows.map((r, i) => (
-          <div key={i} className="grid grid-cols-1 gap-2 rounded-2xl border border-line p-3 sm:grid-cols-[1fr_auto]">
-            <input className="field !py-2" placeholder="Jeu" maxLength={24} value={r.game} onChange={(e) => update(i, { game: e.target.value.toUpperCase() })} />
-            <button type="button" className="btn-danger !py-2" onClick={() => setRows((cur) => cur.filter((_, k) => k !== i))}>Retirer</button>
+        <div className="flex flex-col gap-2">
+          <Label>Mes jeux ({rows.length}/{MAX})</Label>
+          {rows.length === 0 && <p className="text-sm text-slate-500">Aucun jeu pour le moment.</p>}
+          {rows.map((r, i) => (
+            <div key={`${r.game}-${r.platform}-${i}`} className="grid grid-cols-1 gap-2 rounded-2xl border border-line p-3 sm:grid-cols-[1fr_auto_auto]">
+              <div className="min-w-0">
+                <p className="break-words font-bold text-slate-900">{r.game}</p>
+                <p className="text-xs text-slate-500">{r.platform || 'Plateforme non précisée'}</p>
+              </div>
+              <input className="field !py-2 sm:w-40" placeholder="Rang (facultatif)" maxLength={24} value={r.rank} onChange={(e) => update(i, { rank: e.target.value })} />
+              <button type="button" className="btn-danger !py-2" onClick={() => setRows((cur) => cur.filter((_, k) => k !== i))}>Retirer</button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-4">
+          <Label>Rechercher un jeu</Label>
+          <input className="field" placeholder="Nom du jeu…" maxLength={40} value={q} onChange={(e) => setQ(e.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            {['', ...PLATFORMS].map((p) => (
+              <button
+                key={p || 'all'}
+                type="button"
+                onClick={() => setPlatform(p)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${platform === p ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                {p || 'Toutes'}
+              </button>
+            ))}
           </div>
-        ))}
-        {rows.length < 3 && (
-          <button type="button" className="btn-ghost" onClick={() => setRows((cur) => [...cur, { game: '', rank: '' }])}>Ajouter un jeu</button>
-        )}
-        <span className="text-xs text-slate-400">3 jeux maximum.</span>
+          <div className="thin-scroll flex max-h-64 flex-col gap-1 overflow-y-auto">
+            {results.map((g) => (
+              <div key={g.name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-2 py-2 hover:bg-slate-100">
+                <span className="min-w-0 break-words text-sm font-bold text-slate-900">{g.name}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(platform ? [platform] : g.platforms).filter((p) => g.platforms.includes(p)).map((p) => (
+                    <button key={p} type="button" disabled={full} onClick={() => add(g.name, p)} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-40">
+                      + {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {q.trim() && !exact && (
+              <button type="button" disabled={full} onClick={() => { add(q.trim(), ''); setQ(''); }} className="rounded-xl border border-dashed border-slate-300 bg-surface px-3 py-2 text-left text-sm font-bold text-white hover:bg-slate-200 disabled:opacity-40">
+                Ajouter « {q.trim()} » (non listé)
+              </button>
+            )}
+            {!q.trim() && results.length === 0 && <p className="text-sm text-slate-500">Tapez le nom d’un jeu pour le trouver.</p>}
+          </div>
+        </div>
+        <span className="text-xs text-slate-400">{full ? `${MAX} jeux maximum : retirez-en un pour en ajouter.` : `${MAX} jeux maximum.`}</span>
         <ErrorLine>{error}</ErrorLine>
         <div className="flex justify-end gap-2">
           <button type="button" className="btn-ghost" onClick={onClose}>Annuler</button>

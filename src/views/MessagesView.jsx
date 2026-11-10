@@ -205,6 +205,18 @@ export default function MessagesView({ withId }) {
             <div ref={listRef} onScroll={onListScroll} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5">
               {thread.length === 0 && <p className="m-auto text-sm text-slate-500">Écrivez à {partner.pseudo} pour commencer.</p>}
               {thread.map((d) => {
+                // Trace d'appel : une ligne centrée (durée ou appel manqué).
+                if (d.kind === 'call') {
+                  return (
+                    <div key={d.id} className="flex justify-center">
+                      <span className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-700">
+                        <Icon name="phone" className="h-3.5 w-3.5" />
+                        {d.content}
+                        <TimeAgo ts={d.created_at} className="font-normal text-slate-400" />
+                      </span>
+                    </div>
+                  );
+                }
                 const author = d.from === me.id ? me : partner;
                 return (
                   // Chaque message est une cellule distincte, comme dans les espaces.

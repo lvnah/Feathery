@@ -309,10 +309,11 @@ function GamesBlock({ user, editable }) {
       {games.length === 0 ? (
         <span className="text-sm text-slate-500">Ajoutez vos jeux.</span>
       ) : (
-        <span className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <span className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((g) => (
-            <span key={g.game} className="flex flex-col rounded-xl bg-surface px-3 py-2 shadow-soft">
+            <span key={`${g.game}-${g.platform}`} className="flex flex-col rounded-xl bg-surface px-3 py-2 shadow-soft">
               <span className="min-w-0 break-words text-sm font-extrabold">{g.game}</span>
+              {(g.platform || g.rank) && <span className="break-words text-xs text-slate-500">{[g.platform, g.rank].filter(Boolean).join(' · ')}</span>}
             </span>
           ))}
         </span>
