@@ -9,8 +9,8 @@ import { run } from './ServerView';
 import PageBanner from '../components/PageBanner';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
-import { callRoom, joinCall, leaveCall, setVoiceMutedRemote } from '../lib/store';
-import { isVoiceMuted, setVoiceMuted, unlockAudio, useSpeaking } from '../lib/voice';
+import { callOf, joinCall } from '../lib/store';
+import { unlockAudio, useSpeaking } from '../lib/voice';
 
 // Messages privés. Une personne qui n'est pas amie peut écrire : cela crée une demande de message.
 export default function MessagesView({ withId }) {
@@ -172,7 +172,7 @@ export default function MessagesView({ withId }) {
               })()}
             </header>
 
-            {partner && <CallStrip me={me} partner={partner} s={s} speaking={speaking} />}
+            {partner && <CallStrip me={me} partner={partner} s={s} />}
 
             {incomingRequest && (
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-brand-50 px-5 py-3">
@@ -245,63 +245,22 @@ export default function MessagesView({ withId }) {
   );
 }
 
-// Appel privé avec ce contact : lancer, rejoindre (s'il appelle), couper le micro, raccrocher.
-function CallStrip({ me, partner, s, speaking }) {
+// Appeler ce contact : l'appel lui-même s'affiche dans la fenêtre d'appel (CallOverlay).
+function CallStrip({ me, partner, s }) {
   const { toast } = useUI();
-  const room = callRoom(me.id, partner.id);
-  const inRoom = s.voice.filter((v) => v.channel_id === room);
-  const inCall = inRoom.some((v) => v.user_id === me.id);
-  const partnerIn = inRoom.some((v) => v.user_id === partner.id);
-  const [muted, setMuted] = useState(isVoiceMuted());
-  if (!inCall && !partnerIn) {
-    return (
-      <div className="flex items-center justify-end border-b border-slate-100 px-5 py-2.5">
-        <button type="button" onClick={() => { unlockAudio(); run(toast, () => joinCall(partner.id), `Appel de ${partner.pseudo}`); }} className="btn-soft !rounded-full !py-2 !text-sm">
-          Appeler {partner.pseudo}
-        </button>
-      </div>
-    );
-  }
-  if (!inCall) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-100 px-5 py-3">
-        <p className="text-sm font-bold text-slate-900">{partner.pseudo} vous appelle.</p>
-        <button type="button" onClick={() => { unlockAudio(); run(toast, () => joinCall(partner.id), 'Appel rejoint'); }} className="btn-primary !rounded-full !py-2 !text-sm">
-          Rejoindre l’appel
-        </button>
-      </div>
-    );
-  }
-  const partnerSpeaking = speaking.has(partner.id) && !inRoom.find((v) => v.user_id === partner.id)?.muted;
-  const waiting = !partnerIn;
+  if (callOf(s)) return null;
+  const online = isOnline(partner);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-100 px-5 py-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className={`rounded-full transition ${partnerSpeaking ? 'ring-2 ring-white shadow-[0_0_12px_rgba(255,255,255,0.8)]' : ''}`}>
-          <Avatar user={partner} size="xs" />
-        </span>
-        <p className="truncate text-sm font-bold text-slate-900">
-          {waiting ? `Appel en cours… ${partner.pseudo} n’a pas encore rejoint` : `En appel avec ${partner.pseudo}`}
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            const next = !muted;
-            setMuted(next);
-            setVoiceMuted(next);
-            setVoiceMutedRemote(next).catch(() => {});
-          }}
-          aria-label={muted ? 'Activer le micro' : 'Couper le micro'}
-          className={`btn-ghost !rounded-full !py-2 !text-sm ${muted ? '!text-red-600' : ''}`}
-        >
-          {muted ? 'Micro coupé' : 'Micro ouvert'}
-        </button>
-        <button type="button" onClick={() => run(toast, () => leaveCall(), 'Appel terminé')} className="btn-danger !rounded-full !py-2 !text-sm">
-          Raccrocher
-        </button>
-      </div>
+    <div className="flex items-center justify-end border-b border-slate-100 px-5 py-2.5">
+      <button
+        type="button"
+        disabled={!online}
+        title={online ? `Appeler ${partner.pseudo}` : `${partner.pseudo} est hors ligne`}
+        onClick={() => { unlockAudio(); run(toast, () => joinCall(partner.id), `Appel de ${partner.pseudo}`); }}
+        className="btn-soft !rounded-full !py-2 !text-sm disabled:opacity-40"
+      >
+        {online ? `Appeler ${partner.pseudo}` : `${partner.pseudo} est hors ligne`}
+      </button>
     </div>
   );
 }

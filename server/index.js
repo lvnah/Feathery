@@ -237,6 +237,11 @@ async function handleApi(req, res, path) {
     const body = await readJson(req).catch(() => ({})); // corps vide : ordinateur par défaut
     const device = body.device === 'mobile' ? 'mobile' : 'desktop';
     db.prepare('UPDATE users SET last_activity = ?, device = ? WHERE id = ?').run(Date.now(), device, me.id);
+    // Dernière saisie = maintenant moins le temps d'inactivité envoyé par le navigateur.
+    const idle = Number(body.idle);
+    if (Number.isFinite(idle) && idle >= 0) {
+      db.prepare('UPDATE users SET last_input = ? WHERE id = ?').run(Date.now() - Math.min(idle, 86_400_000), me.id);
+    }
     return send(res, 200, { ok: true });
   }
   // Recherche d'un membre (pseudo et tag) : sur tous les comptes, pas seulement ceux déjà connus.

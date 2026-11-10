@@ -3,7 +3,7 @@
 import { randomBytes } from 'node:crypto';
 import { db } from './db.js';
 import { hashPassword, verifyPassword, createSession, deleteSession } from './auth.js';
-import { publicUser } from './sync.js';
+import { publicUser, ONLINE_WINDOW_MS } from './sync.js';
 import { storeImage } from './images.js';
 import { CONFIRM_EMAIL, consumeToken, mailConfigured, sendVerification } from './mail.js';
 import { COUNTRY_CODES } from './countries.js';
@@ -512,7 +512,10 @@ const handlers = {
   joinCall(me, p) {
     const peerId = String(p.peerId ?? '');
     if (!peerId || peerId === me.id) fail('Appel impossible.', 400);
-    if (!one('SELECT 1 FROM users WHERE id = ?', peerId)) fail('Utilisateur introuvable.', 404);
+    const peer = one('SELECT pseudo, status, last_activity FROM users WHERE id = ?', peerId);
+    if (!peer) fail('Utilisateur introuvable.', 404);
+    const online = peer.status !== 'offline' && peer.last_activity > Date.now() - ONLINE_WINDOW_MS;
+    if (!online) fail(`${peer.pseudo} est hors ligne : impossible de l’appeler pour le moment.`, 409);
     const friend = one("SELECT 1 FROM friendships WHERE status = 'accepted' AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?))", me.id, peerId, peerId, me.id);
     const dm = one("SELECT 1 FROM dms WHERE status = 'ok' AND ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) LIMIT 1", me.id, peerId, peerId, me.id);
     if (!friend && !dm) fail('Vous ne pouvez appeler que vos amis ou une conversation acceptée.', 403);
@@ -522,8 +525,17 @@ const handlers = {
     run('INSERT OR REPLACE INTO call_connections (user_id, room, muted) VALUES (?, ?, 0)', me.id, room);
   },
 
+  // Raccrocher termine l'appel pour les deux personnes.
   leaveCall(me) {
+    const mine = one('SELECT room FROM call_connections WHERE user_id = ?', me.id);
+    if (mine) run('DELETE FROM call_connections WHERE room = ?', mine.room);
     run('DELETE FROM call_connections WHERE user_id = ?', me.id);
+  },
+
+  // Refuser un appel entrant : l'appelant ne sonne plus et voit l'appel se terminer.
+  declineCall(me, p) {
+    const peerId = String(p.peerId ?? '');
+    run('DELETE FROM call_connections WHERE room = ? AND user_id <> ?', callRoom(me.id, peerId), me.id);
   },
 
   createRole(me, p) {

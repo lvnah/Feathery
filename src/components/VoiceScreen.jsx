@@ -1,18 +1,19 @@
 import { Avatar, Icon } from './ui';
-import { useSpeaking } from '../lib/voice';
+import { useSpeaking, voiceStatusLabel } from '../lib/voice';
 
 // Vue vocale plein écran (téléphone) : qui est là, micro, quitter. Le chat reste accessible via « Retour au chat ».
-export default function VoiceScreen({ channelName, users, isMuted, voiceMuted, onToggleMute, onLeave, onClose, selfId }) {
-  const speaking = useSpeaking();
+export default function VoiceScreen({ channelName, users, isMuted, voiceMuted, onToggleMute, onLeave, onClose, selfId, status, title = 'En vocal', closeLabel = 'Retour au chat', speaking: speakingProp }) {
+  const liveSpeaking = useSpeaking();
+  const speaking = speakingProp ?? liveSpeaking;
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-surface lg:hidden" role="dialog" aria-modal="true" aria-label="Vocal">
+    <div className="fixed inset-0 z-50 flex flex-col bg-surface" role="dialog" aria-modal="true" aria-label="Vocal">
       <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-600">En vocal</p>
+          <p className={`text-xs font-bold uppercase tracking-widest ${status === 'connected' || status === 'alone' ? 'text-emerald-600' : 'text-amber-600'}`}>{status ? voiceStatusLabel(status) : title}</p>
           <p className="truncate text-lg font-extrabold text-slate-900">{channelName}</p>
         </div>
         <button type="button" onClick={onClose} className="rounded-2xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700">
-          Retour au chat
+          {closeLabel}
         </button>
       </header>
 

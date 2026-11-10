@@ -4,6 +4,12 @@ import { db } from './db.js';
 // Fenêtre de présence : un membre est « en ligne » si son heartbeat est plus récent que ce délai.
 // Un onglet réduit est ralenti par le navigateur : on reste « en ligne » tant qu'on n'est pas vraiment parti.
 export const ONLINE_WINDOW_MS = 60_000;
+// Absent après 15 minutes sans saisie (le statut « en game » ou « hors ligne » reste tel quel).
+export const AWAY_AFTER_MS = 15 * 60_000;
+export function effectiveStatus(u) {
+  const raw = u.status ?? 'online';
+  return raw === 'online' && Date.now() - (u.last_input || 0) > AWAY_AFTER_MS ? 'away' : raw;
+}
 
 const all = (sql, ...p) => db.prepare(sql).all(...p);
 const marks = (ids) => ids.map(() => '?').join(',') || 'NULL';
@@ -26,7 +32,7 @@ export function publicUser(u) {
     country: u.country ?? '',
     name_color: u.name_color ?? '',
     custom_status: u.custom_status ?? '',
-    status: u.status ?? 'online',
+    status: effectiveStatus(u),
     banner:
       u.banner_type === 'preset'
         ? { type: 'preset', key: u.banner_value }

@@ -1,3 +1,4 @@
+import CallOverlay from './components/CallOverlay';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Splash from './components/Splash';
 import { getMe, getState, joinServer, leaveVoice, refresh, setVoiceMutedRemote } from './lib/store';
@@ -275,6 +276,7 @@ export default function App() {
   return (
     <UIContext.Provider value={ui}>
       {content}
+      {me && <CallOverlay />}
       {inviteCode && <InviteModal code={inviteCode} loggedIn={!!me} onDone={closeInvite} />}
       {splash && <Splash onDone={endSplash} />}
       <ModalHost modal={modal} onClose={closeModal} />

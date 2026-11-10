@@ -10,7 +10,7 @@ import SpaceHero from '../components/SpaceHero';
 import VoiceScreen from '../components/VoiceScreen';
 import { AttachButton, AttachPreview, GifButton, GifPicker, MessageImage } from '../components/ChatAttach';
 import { chatImageFromFile } from '../lib/images';
-import { isVoiceMuted, setVoiceMuted, unlockAudio, useSpeaking } from '../lib/voice';
+import { isVoiceMuted, setVoiceMuted, unlockAudio, useSpeaking, useVoiceStatus, voiceStatusLabel } from '../lib/voice';
 import { markChannelRead, unreadCount, leaveServer, setVoiceMutedRemote } from '../lib/store';
 import { playMute, playUnmute } from '../lib/sounds';
 import { isOnline } from '../lib/util';
@@ -89,6 +89,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
   const listRef = useRef(null);
   // Membres qui parlent en ce moment : un anneau blanc entoure leur photo.
   const speaking = useSpeaking();
+  const vstatus = useVoiceStatus();
   // Le fil reste collé au bas tant qu'on y est : une photo qui finit de charger ne fait pas sauter la vue,
   // et on ne force pas le défilement quand on relit les anciens messages.
   const stuck = useRef(true);
@@ -386,8 +387,8 @@ export default function ServerView({ serverId, channelId, goHome }) {
           {myVoiceChannel && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-brand-100 bg-brand-50 px-4 py-3 sm:px-5 max-lg:hidden">
               <span className="flex items-center gap-2 text-sm font-bold text-brand-800">
-                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
-                En vocal · {myVoiceChannel.name}
+                <span className={`h-2.5 w-2.5 rounded-full ${vstatus === 'connected' || vstatus === 'alone' ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'}`} />
+                {voiceStatusLabel(vstatus)} · {myVoiceChannel.name}
                 <span className="font-semibold text-brand-600">{voiceUsers(myVoiceChannel).length}/5</span>
               </span>
               <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
@@ -405,8 +406,8 @@ export default function ServerView({ serverId, channelId, goHome }) {
               onClick={() => setVoiceOpen(true)}
               className="flex items-center gap-3 border-b border-brand-100 bg-brand-50 px-4 py-2.5 text-left text-sm font-bold text-brand-800 lg:hidden"
             >
-              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
-              <span className="min-w-0 truncate">En vocal · {myVoiceChannel.name} · {voiceUsers(myVoiceChannel).length}/5</span>
+              <span className={`h-2.5 w-2.5 rounded-full ${vstatus === 'connected' || vstatus === 'alone' ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'}`} />
+              <span className="min-w-0 truncate">{voiceStatusLabel(vstatus)} · {myVoiceChannel.name} · {voiceUsers(myVoiceChannel).length}/5</span>
               <span className="ml-auto shrink-0 text-brand-600">Ouvrir</span>
             </button>
           )}
@@ -420,6 +421,7 @@ export default function ServerView({ serverId, channelId, goHome }) {
           </Modal>
           {voiceOpen && myVoiceChannel && (
             <VoiceScreen
+              status={vstatus}
               channelName={myVoiceChannel.name}
               users={voiceUsers(myVoiceChannel)}
               selfId={me.id}
