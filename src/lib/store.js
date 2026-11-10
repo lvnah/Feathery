@@ -249,8 +249,27 @@ export const joinCall = (peerId) => {
 };
 export const leaveCall = () => {
   const me = state && getMe(state);
-  if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => v.user_id !== me.id) }));
+  if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => !(v.user_id === me.id || v.channel_id.startsWith('call:') && v.channel_id.split('|').includes(me.id))) }));
   return act('leaveCall');
+};
+export const declineCall = (peerId) => {
+  const me = state && getMe(state);
+  if (me) patchLocal((s) => ({ ...s, voice: s.voice.filter((v) => v.channel_id !== callRoom(me.id, peerId)) }));
+  return act('declineCall', { peerId });
+};
+// Appel privé en cours ou entrant : { room, partnerId, state: 'outgoing' | 'incoming' | 'active' } ou null.
+export const callOf = (s) => {
+  const me = s && getMe(s);
+  if (!me) return null;
+  const mine = s.voice.find((v) => v.user_id === me.id);
+  if (mine?.channel_id?.startsWith('call:')) {
+    const partnerId = mine.channel_id.slice(5).split('|').find((id) => id !== me.id);
+    const partnerIn = s.voice.some((v) => v.channel_id === mine.channel_id && v.user_id === partnerId);
+    return { room: mine.channel_id, partnerId, state: partnerIn ? 'active' : 'outgoing' };
+  }
+  // Un appel qui me sonne : le salon « call:a|b » contient mon identifiant et je n'y suis pas encore.
+  const ringing = s.voice.find((v) => v.channel_id.startsWith('call:') && v.channel_id.slice(5).split('|').includes(me.id) && v.user_id !== me.id);
+  return ringing ? { room: ringing.channel_id, partnerId: ringing.user_id, state: 'incoming' } : null;
 };
 export const createRole = (serverId, role) => act('createRole', { serverId, ...role });
 export const kickMember = (serverId, userId) => act('kickMember', { serverId, userId });

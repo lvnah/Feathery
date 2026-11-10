@@ -126,6 +126,27 @@ const subscribeSpeaking = (fn) => {
 // Ensemble des membres qui parlent en ce moment (se met à jour seul).
 export const useSpeaking = () => useSyncExternalStore(subscribeSpeaking, () => speaking);
 
+// État réel de la connexion vocale : 'idle' (hors vocal), 'alone' (dans le salon, personne d'autre),
+// 'connecting' (des pairs attendus mais pas encore connectés), 'connected' (au moins un pair connecté).
+let status = 'idle';
+const statusListeners = new Set();
+function setStatus(next) {
+  if (next === status) return;
+  status = next;
+  statusListeners.forEach((fn) => fn());
+}
+function refreshStatus() {
+  if (!session) return setStatus('idle');
+  const peers = [...session.peers.values()];
+  if (!peers.length) return setStatus('alone');
+  setStatus(peers.some((e) => e.pc.connectionState === 'connected') ? 'connected' : 'connecting');
+}
+export const useVoiceStatus = () =>
+  useSyncExternalStore((fn) => {
+    statusListeners.add(fn);
+    return () => statusListeners.delete(fn);
+  }, () => status);
+
 // Préférences d'appareils (micro, haut-parleur), gardées sur cet appareil.
 const PREFS_KEY = 'hevenly:audio';
 export const getAudioPrefs = () => {
@@ -169,6 +190,7 @@ function closeEntry(peerId) {
   if (entry.audio) pendingAudio.delete(entry.audio);
   session.peers.delete(peerId);
   unwatchSpeaking(peerId);
+  refreshStatus();
 }
 
 // Relance une connexion tombée : on la recrée, l'initiateur renvoie une offre.
@@ -213,6 +235,7 @@ function createPeer(peerId, initiator) {
   };
   pc.onconnectionstatechange = () => {
     if (!session || session.peers.get(peerId) !== entry) return;
+    refreshStatus();
     if (pc.connectionState === 'failed') scheduleRestart(peerId, RESTART_DELAY_MS);
     // Coupure brève (réseau qui change) : on laisse le temps de revenir avant de recommencer.
     else if (pc.connectionState === 'disconnected') scheduleRestart(peerId, DISCONNECT_GRACE_MS);
@@ -306,6 +329,7 @@ async function start(channelId, myId) {
   stream.getAudioTracks().forEach((t) => (t.enabled = !muted));
   watchSpeaking(myId, stream);
   session.timer = setInterval(pollSignals, SIGNAL_INTERVAL_MS);
+  refreshStatus();
   return true;
 }
 
@@ -316,6 +340,7 @@ export function stopVoice() {
   session.stream.getTracks().forEach((t) => t.stop());
   unwatchSpeaking(session.myId);
   session = null;
+  refreshStatus();
 }
 
 // Appelé à chaque changement de l'état : participants = identifiants des membres du salon courant.
@@ -334,6 +359,7 @@ export async function syncVoice(channelId, myId, participantIds) {
   for (const id of [...session.peers.keys()]) {
     if (!participantIds.includes(id)) closeEntry(id);
   }
+  refreshStatus();
 }
 
 // Message clair selon la cause réelle du refus du micro.
@@ -394,3 +420,7 @@ export async function grantMicAccess() {
   });
   stream.getTracks().forEach((t) => t.stop());
 }
+
+// Libellé affiché selon l'état réel de la connexion.
+export const voiceStatusLabel = (st) =>
+  ({ idle: '', alone: 'Connecté · seul dans le salon', connecting: 'En connexion…', connected: 'Connecté' })[st] ?? '';

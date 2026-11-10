@@ -33,6 +33,16 @@ function tone(freq, start, dur, type = 'sine', peak = 0.12) {
 export const playJoin = () => { tone(523, 0, 0.16); tone(784, 0.12, 0.26); };
 // Départ d'un vocal (ou un membre qui part) : deux notes qui descendent.
 export const playLeave = () => { tone(784, 0, 0.16); tone(392, 0.12, 0.28); };
+// Sonnerie d'appel : « bip bip » répété. Renvoie la fonction qui l'arrête.
+export function startRing() {
+  const beep = () => {
+    tone(880, 0, 0.14, 'square', 0.05);
+    tone(880, 0.22, 0.14, 'square', 0.05);
+  };
+  beep();
+  const id = setInterval(beep, 2400);
+  return () => clearInterval(id);
+}
 // Micro coupé : petit clic grave, pour soi uniquement.
 export const playMute = () => { tone(660, 0, 0.09, 'triangle', 0.09); };
 // Micro rétabli : clic aigu, pour soi uniquement.
