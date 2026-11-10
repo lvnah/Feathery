@@ -134,8 +134,10 @@ export default function MessagesView({ withId }) {
                 <Avatar user={user} size="md" showStatus />
               </button>
               <span className="min-w-0 flex-1">
-                <span onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="inline-block max-w-full truncate font-bold hover:underline" style={nameStyle(user)}>{user.pseudo}</span>
-                <RoleBadge user={user} />
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span onClick={(e) => { e.stopPropagation(); openUser(user.id); }} className="min-w-0 truncate font-bold hover:underline" style={nameStyle(user)}>{user.pseudo}</span>
+                  <RoleBadge user={user} />
+                </span>
                 <span className="block truncate text-xs text-slate-500">{last ? (last.content || (last.image ? 'Photo' : '')) : statusLabel(user)}</span>
               </span>
               <CountBadge n={unread.dms[user.id] || 0} />
