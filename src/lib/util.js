@@ -213,3 +213,23 @@ export function espaceBannerUser(value) {
   if (/^g[0-6]$/.test(key)) return { banner: { type: 'gradient', index: Number(key.slice(1)) } };
   return { banner: { type: 'preset', key } };
 }
+
+// Couleurs du badge PLUS (le rouge est réservé au badge administrateur).
+export const BADGE_COLORS = {
+  '': { label: 'Par défaut', stops: ['#d4d4d8', '#71717a', '#3f3f46'] },
+  or: { label: 'Or', stops: ['#fde68a', '#f59e0b', '#b45309'] },
+  emeraude: { label: 'Émeraude', stops: ['#6ee7b7', '#10b981', '#047857'] },
+  ciel: { label: 'Ciel', stops: ['#bae6fd', '#38bdf8', '#0369a1'] },
+  violet: { label: 'Violet', stops: ['#e9d5ff', '#a855f7', '#6b21a8'] },
+  rose: { label: 'Rose', stops: ['#fbcfe8', '#ec4899', '#9d174d'] },
+  orange: { label: 'Orange', stops: ['#fed7aa', '#fb923c', '#c2410c'] },
+  turquoise: { label: 'Turquoise', stops: ['#99f6e4', '#14b8a6', '#0f766e'] },
+  indigo: { label: 'Indigo', stops: ['#c7d2fe', '#6366f1', '#3730a3'] },
+  argent: { label: 'Argent', stops: ['#f4f4f5', '#a1a1aa', '#52525b'] },
+  jaune: { label: 'Jaune', stops: ['#fef9c3', '#facc15', '#a16207'] },
+  lime: { label: 'Citron', stops: ['#ecfccb', '#84cc16', '#4d7c0f'] },
+};
+export const badgeGradient = (key) => {
+  const c = (BADGE_COLORS[key] ?? BADGE_COLORS['']).stops;
+  return `linear-gradient(135deg, ${c[0]}, ${c[1]}, ${c[2]})`;
+};

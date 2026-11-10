@@ -40,6 +40,21 @@ export default function CallOverlay() {
     setVoiceMutedRemote(next).catch(() => {});
   };
 
+  // En game : appel discret, sans écran ni son, en petite carte qui ne couvre pas la page.
+  if (call.state === 'incoming' && silentIncoming) {
+    return (
+      <div className="fixed bottom-4 right-4 z-[55] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-2xl border border-slate-200 bg-surface p-3 shadow-soft" role="status" aria-label="Appel entrant discret">
+        <Avatar user={partner} size="sm" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-extrabold text-slate-900">{partner.pseudo} vous appelle</p>
+          <p className="text-[11px] font-semibold text-slate-500">Vous êtes en game : sans son</p>
+        </div>
+        <button type="button" onClick={() => run(toast, () => declineCall(partner.id), 'Appel refusé')} className="rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">Refuser</button>
+        <button type="button" onClick={join} className="rounded-full bg-slate-900 px-3 py-2 text-xs font-bold text-white">Rejoindre</button>
+      </div>
+    );
+  }
+
   if (call.state === 'incoming') {
     return (
       <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-8 bg-[rgba(9,9,11,0.96)] p-6 text-center" role="alertdialog" aria-label="Appel entrant">

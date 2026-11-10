@@ -1,12 +1,14 @@
 import { LOGO_URL } from '../lib/brand';
+import { badgeGradient } from '../lib/util';
 
 // Badge PLUS sobre : une fine bague dégradée autour du logo. Pas de halo, pas de texte.
-export default function PlusBadge({ className = '' }) {
+export default function PlusBadge({ className = '', color = '' }) {
   return (
     <span
       title="Membre PLUS"
       aria-label="Membre PLUS"
-      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-300 via-brand-500 to-brand-700 p-[2px] ${className}`}
+      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full p-[2px] ${className}`}
+      style={{ background: badgeGradient(color) }}
     >
       <span className="flex h-full w-full items-center justify-center rounded-full bg-surface">
         <img src={LOGO_URL} alt="" className="h-2.5 w-2.5 object-contain" />
@@ -37,7 +39,7 @@ export function RoleBadge({ user, className = '' }) {
   return (
     <span className="inline-flex shrink-0 items-center gap-1">
       {!!user.is_admin && <AdminBadge className={className} />}
-      {!!user.is_plus && <PlusBadge className={className} />}
+      {!!user.is_plus && <PlusBadge className={className} color={user.badge_color || ''} />}
     </span>
   );
 }

@@ -143,6 +143,8 @@ addColumn('users', 'last_input', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('dms', 'image', "TEXT NOT NULL DEFAULT ''");
 // Type d'entrée : '' = message, 'call' = trace d'appel (durée ou appel manqué).
 addColumn('dms', 'kind', "TEXT NOT NULL DEFAULT ''");
+// Couleur du badge PLUS (vide = couleur par défaut ; jamais le rouge, réservé à l'administration).
+addColumn('users', 'badge_color', "TEXT NOT NULL DEFAULT ''");
 // Plateforme du jeu (Steam, Epic, PlayStation…).
 addColumn('user_games', 'platform', "TEXT NOT NULL DEFAULT ''");
 // Suivi d'un appel en cours : qui l'a lancé, quand, et quand il a été décroché (0 = pas décroché).
