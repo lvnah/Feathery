@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { joinServer } from '../lib/store';
-import { Modal, ServerIcon, SpaceBanner, useUI } from './ui';
+import { Modal, ServerIcon, SpaceBanner, useStore, useUI } from './ui';
 
 // Fenêtre affichée à l'ouverture d'un lien d'invitation : infos de l'espace, puis Rejoindre ou Refuser.
 export default function InviteModal({ code, loggedIn = true, onDone }) {
   const { go } = useUI();
+  const s = useStore();
   const [info, setInfo] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -34,6 +35,12 @@ export default function InviteModal({ code, loggedIn = true, onDone }) {
       setError(err.message);
     }
   };
+  // Déjà membre : on propose d'ouvrir l'espace au lieu de rejoindre.
+  const already = !!info && (s?.servers ?? []).some((x) => x.id === info.id);
+  const open = () => {
+    onDone();
+    go({ name: 'server', serverId: info.id });
+  };
 
   return (
     <Modal open title="" onClose={onDone} width="max-w-md">
@@ -52,11 +59,23 @@ export default function InviteModal({ code, loggedIn = true, onDone }) {
               <p className="text-sm text-slate-500">{info.members} membre(s) · créé par {info.owner_pseudo}</p>
             </div>
             <p className="text-sm text-slate-600">Vous pourrez écrire dans les salons de cet espace et y rejoindre les vocaux.</p>
-            {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={onDone} className="btn-ghost min-h-[48px]" disabled={busy}>Refuser</button>
-              <button type="button" onClick={join} className="btn-primary min-h-[48px]" disabled={busy}>{busy ? 'Connexion…' : loggedIn ? 'Rejoindre' : 'Se connecter pour rejoindre'}</button>
-            </div>
+            {already ? (
+              <>
+                <p className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-800">Vous êtes déjà dans cet espace.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={onDone} className="btn-ghost min-h-[48px]">Fermer</button>
+                  <button type="button" onClick={open} className="btn-primary min-h-[48px]">Ouvrir l’espace</button>
+                </div>
+              </>
+            ) : (
+              <>
+                {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={onDone} className="btn-ghost min-h-[48px]" disabled={busy}>Refuser</button>
+                  <button type="button" onClick={join} className="btn-primary min-h-[48px]" disabled={busy}>{busy ? 'Connexion…' : loggedIn ? 'Rejoindre' : 'Se connecter pour rejoindre'}</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

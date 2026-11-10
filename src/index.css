@@ -249,3 +249,11 @@ html[data-theme="dark"] .btn-danger { color: #fecaca !important; }
 /* Bouton de suppression lisible en sombre (sans couleur de marque). */
 html[data-theme="dark"] .btn-danger { background-color: #1f1f23 !important; color: #fca5a5 !important; }
 html[data-theme="dark"] .btn-danger:hover { background-color: #2a2a30 !important; }
+
+/* Étoile de l'administrateur : scintillement doux, arrêté si le mouvement est réduit. */
+.admin-star { animation: admin-glow 2.6s ease-in-out infinite; }
+@keyframes admin-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.35)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)); transform: scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) { .admin-star { animation: none; } }
